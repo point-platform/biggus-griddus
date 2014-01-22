@@ -1,0 +1,33 @@
+html, body
+{
+   font-family: sans-serif;
+}
+
+table.grid
+{
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+table.grid thead th
+{
+    background: #444;
+    color: #fff;
+    text-align: left;
+}
+
+table.grid thead th + th
+{
+    border-left: 1px solid white;
+}
+
+table.grid thead th.iso2
+{
+    width: 16px;
+    color: transparent;
+}
+
+table.grid thead th.side
+{
+    width: 80px;
+}
