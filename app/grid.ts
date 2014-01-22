@@ -15,6 +15,7 @@ export interface IColumnSpecification
 export interface ITableSpecification
 {
     columns: IColumnSpecification[];
+    rowDataId: (rowData: any) => string;
 }
 
 export class Grid
@@ -22,6 +23,7 @@ export class Grid
     private headerGroup: HTMLTableSectionElement;
     private bodyGroup: HTMLTableSectionElement;
     private headerRow: HTMLTableRowElement;
+    private rowById: {[s:string]: HTMLTableRowElement } = {};
 
     constructor(public table: HTMLTableElement, public spec: ITableSpecification)
     {
@@ -57,42 +59,80 @@ export class Grid
         }
     }
 
+    private createRow(): HTMLTableRowElement
+    {
+        var row = document.createElement('tr');
+        for (var c = 0; c < this.spec.columns.length; c++)
+        {
+            var columnSpec = this.spec.columns[c];
+            var cell = document.createElement('td');
+            row.appendChild(cell)
+        }
+        return row;
+    }
+
+    private bindRow(row: HTMLTableRowElement, data: any)
+    {
+        for (var c = 0; c < this.spec.columns.length; c++)
+        {
+            var columnSpec = this.spec.columns[c];
+            var cell = <HTMLTableCellElement>row.children[c];
+
+            if (columnSpec.className)
+                cell.className = columnSpec.className;
+            else
+                cell.className = '';
+
+            if (typeof(columnSpec.field) === 'string')
+            {
+                cell.textContent = data[columnSpec.field];
+            }
+            else
+            {
+                console.assert(typeof(columnSpec.field) === 'function');
+
+                var result = columnSpec.field(data, columnSpec);
+
+                if (result instanceof HTMLElement)
+                    cell.appendChild(result);
+                else
+                    cell.textContent = result;
+
+            }
+        }
+    }
+
+    private clearRow(row: HTMLTableRowElement)
+    {
+        for (var c = 0; c < this.spec.columns.length; c++)
+        {
+            var cell = <HTMLTableCellElement>row.children[c];
+            cell.className = null;
+            cell.textContent = null;
+            while (cell.firstChild) {
+                cell.removeChild(cell.firstChild);
+            }
+        }
+    }
+
     public addRows(rows: any[])
     {
         for (var r = 0; r < rows.length; r++)
         {
             var rowData = rows[r];
-            var row = document.createElement('tr');
-
-            for (var c = 0; c < this.spec.columns.length; c++)
-            {
-                var columnSpec = this.spec.columns[c];
-                var cell = document.createElement('td');
-
-                if (columnSpec.className)
-                    cell.className = columnSpec.className;
-
-                if (typeof(columnSpec.field) === 'string')
-                {
-                    cell.textContent = rowData[columnSpec.field];
-                }
-                else
-                {
-                    console.assert(typeof(columnSpec.field) === 'function');
-
-                    var result = columnSpec.field(rowData, columnSpec);
-
-                    if (result instanceof HTMLElement)
-                        cell.appendChild(result);
-                    else
-                        cell.textContent = result;
-
-                }
-
-                row.appendChild(cell)
-            }
-
+            var rowId = this.spec.rowDataId(rowData);
+            var row = this.createRow();
+            this.rowById[rowId] = row;
+            this.bindRow(row, rowData);
             this.bodyGroup.appendChild(row);
         }
+    }
+
+    public update(data: any)
+    {
+        var rowId = this.spec.rowDataId(data);
+        var row = this.rowById[rowId];
+        this.clearRow(row);
+        this.bindRow(row, data);
     }
 }

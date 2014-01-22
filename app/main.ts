@@ -49,22 +49,23 @@ var filledPercentageColumn = (trade: ITrade) => {
     return bar;
 };
 
+var sideColumn = (trade: ITrade) => trade.side == Side.Buy ? "BUY" : "SELL";
+
 var columnSpecs: gridModule.IColumnSpecification[] = [
     {title:'ID', field:'id'},
     {className: 'iso2', field:flagColumn},
     {title:'Instrument', field:'instrument'},
-    {title:'Side', className: 'side', field:'side'},
+    {title:'Side', className: 'side', field:sideColumn},
     {title:'Quantity', field:'quantity'},
     {title:'Filled', field:'filledQuantity'},
     {title:'% Filled', className:'fill-bar', field:filledPercentageColumn}
 ];
 
-var grid = new gridModule.Grid(table, {columns: columnSpecs});
+var grid = new gridModule.Grid(table, {columns: columnSpecs, rowDataId:(trade: ITrade) => trade.id.toString()});
 
 grid.addRows(trades);
 
-
-
-
-
-
+setInterval(() => {
+    grid.update({id:1, instrument:'VOD LN', iso2:'GB', side: Side.Buy, quantity: 1234, filledQuantity:Math.round(Math.random() * 1234)});
+    grid.update({id:2, instrument:'IBM US', iso2:'US', side: Side.Sell, quantity: 14, filledQuantity:Math.round(Math.random() * 12.56)});
+}, 20);
