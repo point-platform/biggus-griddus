@@ -61,7 +61,7 @@ var columnSpecs: gridModule.IColumnSpecification[] = [
     {title:'% Filled', className:'fill-bar', field:filledPercentageColumn}
 ];
 
-var grid = new gridModule.Grid(table, {columns: columnSpecs, rowDataId:(trade: ITrade) => trade.id.toString()});
+var grid = new gridModule.Grid<ITrade>(table, {columns: columnSpecs, rowDataId:(trade: ITrade) => trade.id.toString()});
 
 grid.addRows(trades);
 

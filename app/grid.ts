@@ -12,20 +12,20 @@ export interface IColumnSpecification
     field?: any;
 }
 
-export interface ITableSpecification
+export interface ITableSpecification<TRow>
 {
     columns: IColumnSpecification[];
-    rowDataId: (rowData: any) => string;
+    rowDataId: (rowData: TRow) => string;
 }
 
-export class Grid
+export class Grid<TRow>
 {
     private headerGroup: HTMLTableSectionElement;
     private bodyGroup: HTMLTableSectionElement;
     private headerRow: HTMLTableRowElement;
     private rowById: {[s:string]: HTMLTableRowElement } = {};
 
-    constructor(public table: HTMLTableElement, public spec: ITableSpecification)
+    constructor(public table: HTMLTableElement, public spec: ITableSpecification<TRow>)
     {
         //
         // Create table sections
@@ -71,7 +71,7 @@ export class Grid
         return row;
     }
 
-    private bindRow(row: HTMLTableRowElement, data: any)
+    private bindRow(row: HTMLTableRowElement, data: TRow)
     {
         for (var c = 0; c < this.spec.columns.length; c++)
         {
@@ -115,7 +115,7 @@ export class Grid
         }
     }
 
-    public addRows(rows: any[])
+    public addRows(rows: TRow[])
     {
         for (var r = 0; r < rows.length; r++)
         {
@@ -128,7 +128,7 @@ export class Grid
         }
     }
 
-    public update(data: any)
+    public update(data: TRow)
     {
         var rowId = this.spec.rowDataId(data);
         var row = this.rowById[rowId];
