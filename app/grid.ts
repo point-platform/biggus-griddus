@@ -5,11 +5,11 @@
 
 export interface IColumnSpecification
 {
-    title: string;
+    title?: string;
     hideHeader?: boolean;
     className?: string;
     /** Either a property name to dereference, or a function that operates on the row's data object */
-    field: any;
+    field?: any;
 }
 
 export interface ITableSpecification
@@ -48,7 +48,7 @@ export class Grid
 
             var columnHeader = document.createElement('th');
 
-            if (columnSpec.hideHeader !== true)
+            if (columnSpec.title)
                 columnHeader.textContent = columnSpec.title;
             if (columnSpec.className)
                 columnHeader.className = columnSpec.className;
@@ -69,7 +69,25 @@ export class Grid
                 var columnSpec = this.spec.columns[c];
                 var cell = document.createElement('td');
 
-                cell.textContent = rowData[columnSpec.field];
+                if (columnSpec.className)
+                    cell.className = columnSpec.className;
+
+                if (typeof(columnSpec.field) === 'string')
+                {
+                    cell.textContent = rowData[columnSpec.field];
+                }
+                else
+                {
+                    console.assert(typeof(columnSpec.field) === 'function');
+
+                    var result = columnSpec.field(rowData, columnSpec);
+
+                    if (result instanceof HTMLElement)
+                        cell.appendChild(result);
+                    else
+                        cell.textContent = result;
+
+                }
 
                 row.appendChild(cell)
             }

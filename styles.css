@@ -24,10 +24,17 @@ table.grid thead th + th
 table.grid thead th.iso2
 {
     width: 16px;
+    max-width: 16px;
     color: transparent;
 }
 
 table.grid thead th.side
 {
     width: 80px;
+}
+
+table.grid tbody td.fill-bar div.bar
+{
+    background: red;
+    height: 1em;
 }
