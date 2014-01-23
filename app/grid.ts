@@ -132,8 +132,14 @@ export class Grid<TRow>
 
     public update(rowId: string)
     {
-        var rowModel = this.rowModelById[rowId];
-        this.clearRow(rowModel.element);
+        var rowModel = this.rowModelById[rowId],
+            tr = rowModel.element;
+
+        this.clearRow(tr);
         this.bindRow(rowModel);
+
+        // Flash the row that changed
+        tr.classList.add('highlight-delta');
+        setTimeout(function() { tr.classList.remove('highlight-delta'); }, 100);
     }
 }

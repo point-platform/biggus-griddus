@@ -38,3 +38,15 @@ table.grid tbody td.fill-bar div.bar
     background: red;
     height: 1em;
 }
+
+table.grid tr
+{
+    background-color: transparent;
+    transition: background-color 1000ms linear;
+}
+
+table.grid tr.highlight-delta
+{
+    background-color: #ffff83;
+    transition: background-color 0ms linear;
+}
