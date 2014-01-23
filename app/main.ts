@@ -88,6 +88,5 @@ grid.addRows(trades);
 setInterval(() => {
     var trade = trades[Math.floor(Math.random()*trades.length)];
     trade.filledQuantity = Math.floor((trade.filledQuantity + Math.random()*50) % trade.quantity);
-    // TODO could just update by ID
-    grid.update(trade);
+    grid.update(trade.id.toString());
 }, 5);

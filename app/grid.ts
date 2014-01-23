@@ -18,12 +18,18 @@ export interface ITableSpecification<TRow>
     rowDataId: (rowData: TRow) => string;
 }
 
+interface IRowModel<TRow>
+{
+    data: TRow;
+    element: HTMLTableRowElement;
+}
+
 export class Grid<TRow>
 {
     private headerGroup: HTMLTableSectionElement;
     private bodyGroup: HTMLTableSectionElement;
     private headerRow: HTMLTableRowElement;
-    private rowById: {[s:string]: HTMLTableRowElement } = {};
+    private rowModelById: {[s:string]: IRowModel<TRow> } = {};
 
     constructor(public table: HTMLTableElement, public spec: ITableSpecification<TRow>)
     {
@@ -67,12 +73,12 @@ export class Grid<TRow>
         return row;
     }
 
-    private bindRow(row: HTMLTableRowElement, data: TRow)
+    private bindRow(rowModel: IRowModel<TRow>)
     {
         for (var c = 0; c < this.spec.columns.length; c++)
         {
             var columnSpec = this.spec.columns[c];
-            var cell = <HTMLTableCellElement>row.children[c];
+            var cell = <HTMLTableCellElement>rowModel.element.children[c];
 
             if (columnSpec.className)
                 cell.className = columnSpec.className;
@@ -81,13 +87,13 @@ export class Grid<TRow>
 
             if (typeof(columnSpec.field) === 'string')
             {
-                cell.textContent = data[columnSpec.field];
+                cell.textContent = rowModel.data[columnSpec.field];
             }
             else
             {
                 console.assert(typeof(columnSpec.field) === 'function');
 
-                var result = columnSpec.field(data, columnSpec);
+                var result = columnSpec.field(rowModel.data, columnSpec);
 
                 if (result instanceof HTMLElement)
                     cell.appendChild(result);
@@ -117,17 +123,17 @@ export class Grid<TRow>
             var rowData = rows[r];
             var rowId = this.spec.rowDataId(rowData);
             var row = this.createRow();
-            this.rowById[rowId] = row;
-            this.bindRow(row, rowData);
+            var rowModel = {data: rowData, element: row};
+            this.rowModelById[rowId] = rowModel;
+            this.bindRow(rowModel);
             this.bodyGroup.appendChild(row);
         }
     }
 
-    public update(data: TRow)
+    public update(rowId: string)
     {
-        var rowId = this.spec.rowDataId(data);
-        var row = this.rowById[rowId];
-        this.clearRow(row);
-        this.bindRow(row, data);
+        var rowModel = this.rowModelById[rowId];
+        this.clearRow(rowModel.element);
+        this.bindRow(rowModel);
     }
 }
