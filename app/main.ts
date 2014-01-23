@@ -23,10 +23,29 @@ interface ITrade
     filledQuantity: number;
 }
 
-var trades: ITrade[] = [
-    {id:1, instrument:'VOD LN', iso2:'GB', side: Side.Buy, quantity: 1234, filledQuantity:800},
-    {id:2, instrument:'IBM US', iso2:'US', side: Side.Sell, quantity: 12.56, filledQuantity: 3.2}
+var instruments = [
+    {name: 'VOD LN', iso2: 'GB'},
+    {name: 'IBM US', iso2: 'US'},
+    {name: 'RIO AU', iso2: 'AU'},
+    {name: 'BER DE', iso2: 'DE'},
+    {name: 'PHIL NL', iso2: 'NL'},
+    {name: 'CURR IN', iso2: 'IN'}
 ];
+
+var trades: ITrade[] = [];
+
+for (var t = 1; t < 400; t++)
+{
+    var instrument = instruments[Math.floor(Math.random()*instruments.length)];
+    trades.push({
+        id: t,
+        instrument: instrument.name,
+        iso2: instrument.iso2,
+        side: Math.random() > 0.5 ? Side.Buy : Side.Sell,
+        quantity: Math.round(Math.random() * 1000 + 100),
+        filledQuantity: 0
+    });
+}
 
 //
 // Grid construction
@@ -46,6 +65,7 @@ var filledPercentageColumn = (trade: ITrade) => {
     var bar = document.createElement('div');
     bar.className = 'bar';
     bar.style.width = (100*trade.filledQuantity/trade.quantity) + '%';
+    bar.style.backgroundColor = 'hsl(' + (360 * trade.filledQuantity / trade.quantity) + ',100%,50%)';
     return bar;
 };
 
@@ -66,6 +86,8 @@ var grid = new gridModule.Grid<ITrade>(table, {columns: columnSpecs, rowDataId:(
 grid.addRows(trades);
 
 setInterval(() => {
-    grid.update({id:1, instrument:'VOD LN', iso2:'GB', side: Side.Buy, quantity: 1234, filledQuantity:Math.round(Math.random() * 1234)});
-    grid.update({id:2, instrument:'IBM US', iso2:'US', side: Side.Sell, quantity: 14, filledQuantity:Math.round(Math.random() * 12.56)});
-}, 20);
+    var trade = trades[Math.floor(Math.random()*trades.length)];
+    trade.filledQuantity = Math.floor((trade.filledQuantity + Math.random()*50) % trade.quantity);
+    // TODO could just update by ID
+    grid.update(trade);
+}, 5);
