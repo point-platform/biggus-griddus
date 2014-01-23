@@ -63,11 +63,7 @@ export class Grid<TRow>
     {
         var row = document.createElement('tr');
         for (var c = 0; c < this.spec.columns.length; c++)
-        {
-            var columnSpec = this.spec.columns[c];
-            var cell = document.createElement('td');
-            row.appendChild(cell)
-        }
+            row.appendChild(document.createElement('td'))
         return row;
     }
 
@@ -97,7 +93,6 @@ export class Grid<TRow>
                     cell.appendChild(result);
                 else
                     cell.textContent = result;
-
             }
         }
     }
