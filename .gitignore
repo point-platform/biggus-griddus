@@ -1,4 +1,4 @@
-app/*.js
-app/*.js.map
+grid.js
+grid.js.map
 .idea
 
