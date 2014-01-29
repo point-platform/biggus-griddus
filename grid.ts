@@ -124,8 +124,6 @@ export class Grid<TRow>
 
     public setRow(rowData: TRow)
     {
-//        debugger;
-
         var rowId = this.spec.rowDataId(rowData);
 
         var rowModel = this.rowModelById[rowId];
