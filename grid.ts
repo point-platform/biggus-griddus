@@ -87,7 +87,9 @@ export class Grid<TRow>
 
             if (typeof(columnSpec.field) === 'string')
             {
-                cell.textContent = rowModel.data[columnSpec.field];
+                var str = rowModel.data[columnSpec.field];
+                if (typeof(str) !== 'undefined')
+                    cell.textContent = str;
             }
             else
             {
@@ -97,7 +99,7 @@ export class Grid<TRow>
 
                 if (result instanceof HTMLElement)
                     cell.appendChild(result);
-                else
+                else if (typeof(result) !== 'undefined')
                     cell.textContent = result;
             }
         }
