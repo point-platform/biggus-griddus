@@ -145,6 +145,33 @@ export class ImageColumn<TRow> extends ColumnBase<TRow>
     }
 }
 
+export interface IBarChartColumnOptions<TRow> extends IColumnOptions<TRow>
+{
+    ratio: (row: TRow)=>number;
+    color: (ratio: number)=>string;
+}
+
+export class BarChartColumn<TRow> extends ColumnBase<TRow>
+{
+    constructor(private options: IBarChartColumnOptions<TRow>)
+    {
+        super(options);
+    }
+
+    public styleCell(td: HTMLTableCellElement, row: TRow)
+    {
+        var ratio = this.options.ratio(row);
+
+        var bar = document.createElement('div');
+        bar.className = 'bar';
+        bar.style.width = (100* ratio) + '%';
+        bar.style.backgroundColor = this.options.color(ratio);
+        td.appendChild(bar);
+
+        super.styleCell(td, row);
+    }
+}
+
 export interface IGridOptions<TRow>
 {
     columns: IColumn<TRow>[];
