@@ -3,18 +3,101 @@
  * @date 22 Jan 2014
  */
 
-export interface IColumnSpecification
+function dereferencePath(obj: Object, pathParts: string[])
 {
+    var i = 0;
+    while (obj && i < pathParts.length)
+        obj = obj[pathParts[i++]];
+    return obj;
+}
+
+export interface IColumn<TRow>
+{
+    getClassName(): string;
+    getTitleText(): string;
+    getCellContent(row: TRow): any; // Node added as child, other values converted to string, undefined/null ignored
+}
+
+export interface IColumnOptions
+{
+    /** Text to show in the column's header. */
     title?: string;
-    hideHeader?: boolean;
+    /** The CSS class name for all th/td elements in the column. */
     className?: string;
-    /** Either a property name to dereference, or a function that operates on the row's data object */
-    field?: any;
+}
+
+export interface ITextColumnOptions<TRow> extends IColumnOptions
+{
+    /** A dot-separated path to the value on the row object. */
+    path?: string;
+    // TODO support a user-provided function here
+//    value?: (row:TRow)=>any;
+}
+
+export class TextColumn<TRow> implements IColumn<TRow>
+{
+    private pathParts: string[];
+
+    constructor(private options: ITextColumnOptions<TRow>)
+    {
+        if (!options.path)
+            throw new Error("Must provide a path.");
+        this.pathParts = options.path.split('.');
+    }
+
+    public getClassName() { return this.options.className; }
+    public getTitleText() { return this.options.title; }
+
+    public getCellContent(row: TRow)
+    {
+        return dereferencePath(row, this.pathParts);
+    }
+}
+
+export interface IImageColumnOptions<TRow> extends IColumnOptions
+{
+    /** A dot-separated path to the value on the row object. */
+    url?: string;
+    lowerCase?: boolean;
+}
+
+var imagePathRegExp = new RegExp('^(.*)\\{(.*)\\}(.*)$');
+
+export class ImageColumn<TRow> implements IColumn<TRow>
+{
+    private pathParts: string[];
+    private urlPrefix: string;
+    private urlSuffix: string;
+
+    constructor(private options: IImageColumnOptions<TRow>)
+    {
+        if (!options.url)
+            throw new Error("Must provide a url.");
+
+        var groups = imagePathRegExp.exec(options.url);
+        this.urlPrefix = groups[1];
+        this.pathParts = groups[2].split('.');
+        this.urlSuffix = groups[3];
+    }
+
+    public getClassName() { return this.options.className; }
+    public getTitleText() { return this.options.title; }
+
+    public getCellContent(row: TRow)
+    {
+        var data = dereferencePath(row, this.pathParts);
+        var img = new Image();
+        var src = this.urlPrefix + data + this.urlSuffix;
+        if (this.options.lowerCase)
+            src = src.toLowerCase();
+        img.src = src;
+        return img;
+    }
 }
 
 export interface ITableSpecification<TRow>
 {
-    columns: IColumnSpecification[];
+    columns: IColumn<TRow>[];
     rowDataId: (rowData: TRow) => string;
 }
 
@@ -26,8 +109,8 @@ interface IRowModel<TRow>
 
 export class Grid<TRow>
 {
-    private headerGroup: HTMLTableSectionElement;
-    private bodyGroup: HTMLTableSectionElement;
+    private thead: HTMLTableSectionElement;
+    private tbody: HTMLTableSectionElement;
     private headerRow: HTMLTableRowElement;
     private rowModelById: {[s:string]: IRowModel<TRow> } = {};
 
@@ -37,50 +120,55 @@ export class Grid<TRow>
         // Create table sections
         //
 
-        this.headerGroup = document.createElement('thead');
-        this.bodyGroup = document.createElement('tbody');
+        this.thead = document.createElement('thead');
+        this.tbody = document.createElement('tbody');
 
-        this.table.appendChild(this.headerGroup);
-        this.table.appendChild(this.bodyGroup);
+        this.table.appendChild(this.thead);
+        this.table.appendChild(this.tbody);
 
         //
-        // Create header
+        // Create header row
         //
 
         this.headerRow = document.createElement('tr');
-        this.headerGroup.appendChild(this.headerRow);
+        this.thead.appendChild(this.headerRow);
 
         for (var c = 0; c < this.spec.columns.length; c++)
         {
-            var columnSpec = this.spec.columns[c];
+            var column = this.spec.columns[c];
 
-            var columnHeader = document.createElement('th');
+            var th = document.createElement('th');
 
-            if (columnSpec.title)
-                columnHeader.textContent = columnSpec.title;
-            if (columnSpec.className)
-                columnHeader.className = columnSpec.className;
+            var titleText = column.getTitleText();
+            if (titleText)
+                th.textContent = titleText;
 
-            this.headerRow.appendChild(columnHeader)
+            var className = column.getClassName();
+            if (className)
+                th.className = className;
+
+            this.headerRow.appendChild(th)
         }
     }
 
+    /** Insert or update the provided rows in the table. */
     public setRows(rows: TRow[])
     {
         for (var r = 0; r < rows.length; r++)
             this.setRow(rows[r]);
     }
 
-    public setRow(rowData: TRow)
+    /** Insert or update the provided row in the table. */
+    public setRow(row: TRow)
     {
-        var rowId = this.spec.rowDataId(rowData);
+        var rowId = this.spec.rowDataId(row);
 
         var rowModel = this.rowModelById[rowId];
 
         if (typeof(rowModel) !== "undefined")
         {
             // row previously known
-            rowModel.data = rowData;
+            rowModel.data = row;
 
             var tr = rowModel.element;
 
@@ -94,63 +182,61 @@ export class Grid<TRow>
         else
         {
             // row unknown
-            var row = this.createRow();
-            rowModel = {data: rowData, element: row};
+            var tr = this.createRow();
+            rowModel = {data: row, element: tr};
             this.rowModelById[rowId] = rowModel;
             this.bindRow(rowModel);
-            this.bodyGroup.appendChild(row);
+            this.tbody.appendChild(tr);
         }
     }
 
+    /** Create a new tr element with the correct number of td children. */
     private createRow(): HTMLTableRowElement
     {
-        var row = document.createElement('tr');
+        var tr = document.createElement('tr');
         for (var c = 0; c < this.spec.columns.length; c++)
-            row.appendChild(document.createElement('td'))
-        return row;
+            tr.appendChild(document.createElement('td'))
+        return tr;
     }
 
+    /** Populate the tr/td elements from the row. */
     private bindRow(rowModel: IRowModel<TRow>)
     {
         for (var c = 0; c < this.spec.columns.length; c++)
         {
-            var columnSpec = this.spec.columns[c];
-            var cell = <HTMLTableCellElement>rowModel.element.children[c];
+            var column = this.spec.columns[c];
+            var td = <HTMLTableCellElement>rowModel.element.children[c];
 
-            if (columnSpec.className)
-                cell.className = columnSpec.className;
-            else
-                cell.className = '';
+            td.className = column.getClassName();
 
-            if (typeof(columnSpec.field) === 'string')
+            var cellContent = column.getCellContent(rowModel.data);
+
+            if (cellContent == null)
+                continue;
+
+            if (cellContent instanceof Node)
             {
-                var str = rowModel.data[columnSpec.field];
-                if (typeof(str) !== 'undefined')
-                    cell.textContent = str;
+                td.appendChild(<Node>cellContent);
             }
             else
             {
-                console.assert(typeof(columnSpec.field) === 'function');
-
-                var result = columnSpec.field(rowModel.data, columnSpec);
-
-                if (result instanceof HTMLElement)
-                    cell.appendChild(result);
-                else if (typeof(result) !== 'undefined')
-                    cell.textContent = result;
+                td.textContent = <string>cellContent;
             }
         }
     }
 
-    private clearRow(row: HTMLTableRowElement)
+    /** Clears all state from a tr element and all child td elements. */
+    private clearRow(tr: HTMLTableRowElement)
     {
+        tr.className = null;
+
         for (var c = 0; c < this.spec.columns.length; c++)
         {
-            var cell = <HTMLTableCellElement>row.children[c];
-            cell.className = null;
-            cell.textContent = null;
-            while (cell.firstChild) {
-                cell.removeChild(cell.firstChild);
+            var td = <HTMLTableCellElement>tr.children[c];
+            td.className = null;
+            td.textContent = null;
+            while (td.firstChild) {
+                td.removeChild(td.firstChild);
             }
         }
     }
