@@ -13,20 +13,22 @@ function dereferencePath(obj: Object, pathParts: string[])
 
 export interface IColumn<TRow>
 {
-    getTitleText(): string;
-    getHeaderClassName(): string;
-    getCellClassName(row: TRow): string;
-    getCellContent(row: TRow): any; // Node added as child, other values converted to string, undefined/null ignored
+    /** Populate and style the column's header element. */
+    styleHeader(th: HTMLTableHeaderCellElement);
+    /** Populate and style a column cell element. */
+    styleCell(td: HTMLTableCellElement, row: TRow);
 }
 
 export interface IColumnOptions<TRow>
 {
     /** Text to show in the column's header. */
     title?: string;
-    /** A function that returns the CSS class name for the header (th) of the column. */
-    thClassName?: string;
-    /** A function that returns the CSS class name for all td elements in the column. */
-    tdClassName?: (row:TRow)=>string;
+    /** A CSS class name to apply to all th/td elements in the column. */
+    className?: string;
+    /** A function that styles the header (th) of the column. */
+    thStyle?: (th: HTMLTableHeaderCellElement)=>void;
+    /** A function that styles the data cells (td) of the column. */
+    tdStyle?: (td: HTMLTableCellElement, row: TRow)=>void;
 }
 
 export interface ITextColumnOptions<TRow> extends IColumnOptions<TRow>
@@ -50,20 +52,37 @@ export class TextColumn<TRow> implements IColumn<TRow>
             this.pathParts = options.path.split('.');
     }
 
-    public getTitleText() { return this.options.title; }
-    public getHeaderClassName() { return this.options.thClassName; }
-
-    public getCellClassName(row?: TRow)
+    public styleHeader(th: HTMLTableHeaderCellElement)
     {
-        return this.options.tdClassName ? this.options.tdClassName(row) : undefined;
+        if (this.options.title)
+            th.textContent = this.options.title;
+
+        if (this.options.className)
+            th.className = this.options.className;
+
+        if (this.options.thStyle)
+            this.options.thStyle(th);
     }
 
-    public getCellContent(row: TRow)
+    public styleCell(td: HTMLTableCellElement, row?: TRow)
     {
-        if (this.pathParts)
-            return dereferencePath(row, this.pathParts);
+        if (this.options.className)
+            td.className = this.options.className;
 
-        return this.options.value(row);
+        if (this.pathParts)
+        {
+            var value = dereferencePath(row, this.pathParts);
+            if (value != null)
+                td.textContent = value.toString();
+        }
+        else
+        {
+            console.assert(!!this.options.value);
+            td.textContent = this.options.value(row);
+        }
+
+        if (this.options.tdStyle)
+            this.options.tdStyle(td, row);
     }
 }
 
@@ -93,23 +112,33 @@ export class ImageColumn<TRow> implements IColumn<TRow>
         this.urlSuffix = groups[3];
     }
 
-    public getTitleText() { return this.options.title; }
-    public getHeaderClassName() { return this.options.thClassName; }
-
-    public getCellClassName(row?: TRow)
+    public styleHeader(th: HTMLTableHeaderCellElement)
     {
-        return this.options.tdClassName ? this.options.tdClassName(row) : undefined;
+        if (this.options.title)
+            th.textContent = this.options.title;
+
+        if (this.options.className)
+            th.className = this.options.className;
+
+        if (this.options.thStyle)
+            this.options.thStyle(th);
     }
 
-    public getCellContent(row: TRow)
+    public styleCell(td: HTMLTableCellElement, row?: TRow)
     {
+        if (this.options.className)
+            td.className = this.options.className;
+
         var data = dereferencePath(row, this.pathParts);
         var img = new Image();
         var src = this.urlPrefix + data + this.urlSuffix;
         if (this.options.lowerCase)
             src = src.toLowerCase();
         img.src = src;
-        return img;
+        td.appendChild(img);
+
+        if (this.options.tdStyle)
+            this.options.tdStyle(td, row);
     }
 }
 
@@ -155,16 +184,9 @@ export class Grid<TRow>
         for (var c = 0; c < this.options.columns.length; c++)
         {
             var column = this.options.columns[c];
-
             var th = document.createElement('th');
 
-            var titleText = column.getTitleText();
-            if (titleText)
-                th.textContent = titleText;
-
-            var className = column.getHeaderClassName();
-            if (className)
-                th.className = className;
+            column.styleHeader(th);
 
             this.headerRow.appendChild(th)
         }
@@ -226,23 +248,7 @@ export class Grid<TRow>
             var column = this.options.columns[c];
             var td = <HTMLTableCellElement>rowModel.tr.children[c];
 
-            var className = column.getCellClassName(rowModel.row);
-            if (className)
-                td.className = className;
-
-            var cellContent = column.getCellContent(rowModel.row);
-
-            if (cellContent == null)
-                continue;
-
-            if (cellContent instanceof Node)
-            {
-                td.appendChild(<Node>cellContent);
-            }
-            else
-            {
-                td.textContent = <string>cellContent;
-            }
+            column.styleCell(td, rowModel.row);
         }
 
         if (this.options.rowClassName)
