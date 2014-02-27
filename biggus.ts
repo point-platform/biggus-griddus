@@ -104,6 +104,7 @@ export interface IGridOptions<TRow>
 {
     columns: IColumn<TRow>[];
     rowDataId: (rowData: TRow) => string;
+    rowClassName?: (rowData: TRow) => string;
 }
 
 interface IRowModel<TRow>
@@ -228,6 +229,9 @@ export class Grid<TRow>
                 td.textContent = <string>cellContent;
             }
         }
+
+        if (this.options.rowClassName)
+            rowModel.element.className = this.options.rowClassName(rowModel.data);
     }
 
     /** Clears all state from a tr element and all child td elements. */
