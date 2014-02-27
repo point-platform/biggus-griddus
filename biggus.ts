@@ -30,8 +30,8 @@ export interface ITextColumnOptions<TRow> extends IColumnOptions
 {
     /** A dot-separated path to the value on the row object. */
     path?: string;
-    // TODO support a user-provided function here
-//    value?: (row:TRow)=>any;
+    /** A function that returns the text to display for this column/row. */
+    value?: (row: TRow)=>string;
 }
 
 export class TextColumn<TRow> implements IColumn<TRow>
@@ -40,9 +40,11 @@ export class TextColumn<TRow> implements IColumn<TRow>
 
     constructor(private options: ITextColumnOptions<TRow>)
     {
-        if (!options.path)
-            throw new Error("Must provide a path.");
-        this.pathParts = options.path.split('.');
+        if (!options.path == !options.value)
+            throw new Error("Must provide one of path or value properties.");
+
+        if (options.path)
+            this.pathParts = options.path.split('.');
     }
 
     public getClassName() { return this.options.className; }
@@ -50,7 +52,10 @@ export class TextColumn<TRow> implements IColumn<TRow>
 
     public getCellContent(row: TRow)
     {
-        return dereferencePath(row, this.pathParts);
+        if (this.pathParts)
+            return dereferencePath(row, this.pathParts);
+
+        return this.options.value(row);
     }
 }
 
