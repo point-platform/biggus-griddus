@@ -13,20 +13,23 @@ function dereferencePath(obj: Object, pathParts: string[])
 
 export interface IColumn<TRow>
 {
-    getClassName(): string;
     getTitleText(): string;
+    getHeaderClassName(): string;
+    getCellClassName(row: TRow): string;
     getCellContent(row: TRow): any; // Node added as child, other values converted to string, undefined/null ignored
 }
 
-export interface IColumnOptions
+export interface IColumnOptions<TRow>
 {
     /** Text to show in the column's header. */
     title?: string;
-    /** The CSS class name for all th/td elements in the column. */
-    className?: string;
+    /** A function that returns the CSS class name for the header (th) of the column. */
+    thClassName?: string;
+    /** A function that returns the CSS class name for all td elements in the column. */
+    tdClassName?: (row:TRow)=>string;
 }
 
-export interface ITextColumnOptions<TRow> extends IColumnOptions
+export interface ITextColumnOptions<TRow> extends IColumnOptions<TRow>
 {
     /** A dot-separated path to the value on the row object. */
     path?: string;
@@ -47,8 +50,13 @@ export class TextColumn<TRow> implements IColumn<TRow>
             this.pathParts = options.path.split('.');
     }
 
-    public getClassName() { return this.options.className; }
     public getTitleText() { return this.options.title; }
+    public getHeaderClassName() { return this.options.thClassName; }
+
+    public getCellClassName(row?: TRow)
+    {
+        return this.options.tdClassName ? this.options.tdClassName(row) : undefined;
+    }
 
     public getCellContent(row: TRow)
     {
@@ -59,7 +67,7 @@ export class TextColumn<TRow> implements IColumn<TRow>
     }
 }
 
-export interface IImageColumnOptions<TRow> extends IColumnOptions
+export interface IImageColumnOptions<TRow> extends IColumnOptions<TRow>
 {
     /** A dot-separated path to the value on the row object. */
     url?: string;
@@ -85,8 +93,13 @@ export class ImageColumn<TRow> implements IColumn<TRow>
         this.urlSuffix = groups[3];
     }
 
-    public getClassName() { return this.options.className; }
     public getTitleText() { return this.options.title; }
+    public getHeaderClassName() { return this.options.thClassName; }
+
+    public getCellClassName(row?: TRow)
+    {
+        return this.options.tdClassName ? this.options.tdClassName(row) : undefined;
+    }
 
     public getCellContent(row: TRow)
     {
@@ -149,7 +162,7 @@ export class Grid<TRow>
             if (titleText)
                 th.textContent = titleText;
 
-            var className = column.getClassName();
+            var className = column.getHeaderClassName();
             if (className)
                 th.className = className;
 
@@ -213,7 +226,7 @@ export class Grid<TRow>
             var column = this.options.columns[c];
             var td = <HTMLTableCellElement>rowModel.tr.children[c];
 
-            var className = column.getClassName();
+            var className = column.getCellClassName(rowModel.row);
             if (className)
                 td.className = className;
 
