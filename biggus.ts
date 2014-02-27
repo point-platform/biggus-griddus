@@ -39,12 +39,45 @@ export interface ITextColumnOptions<TRow> extends IColumnOptions<TRow>
     value?: (row: TRow)=>string;
 }
 
-export class TextColumn<TRow> implements IColumn<TRow>
+export class ColumnBase<TRow> implements IColumn<TRow>
+{
+    constructor(private optionsBase: IColumnOptions<TRow>)
+    {}
+
+    public styleHeader(th: HTMLTableHeaderCellElement)
+    {
+        if (this.optionsBase.title)
+            th.textContent = this.optionsBase.title;
+
+        if (this.optionsBase.className)
+            th.className = this.optionsBase.className;
+
+        if (this.optionsBase.thStyle)
+            this.optionsBase.thStyle(th);
+    }
+
+    /**
+     * Sets the class name (if specified) and calls the styling callback (if specified.)
+     * Subclasses should set text content or add child nodes as required, then call this base implementation.
+     */
+    public styleCell(td: HTMLTableCellElement, row: TRow)
+    {
+        if (this.optionsBase.className)
+            td.className = this.optionsBase.className;
+
+        if (this.optionsBase.tdStyle)
+            this.optionsBase.tdStyle(td, row);
+    }
+}
+
+export class TextColumn<TRow> extends ColumnBase<TRow>
 {
     private pathParts: string[];
 
     constructor(private options: ITextColumnOptions<TRow>)
     {
+        super(options);
+
         if (!options.path == !options.value)
             throw new Error("Must provide one of path or value properties.");
 
@@ -52,23 +85,8 @@ export class TextColumn<TRow> implements IColumn<TRow>
             this.pathParts = options.path.split('.');
     }
 
-    public styleHeader(th: HTMLTableHeaderCellElement)
+    public styleCell(td: HTMLTableCellElement, row: TRow)
     {
-        if (this.options.title)
-            th.textContent = this.options.title;
-
-        if (this.options.className)
-            th.className = this.options.className;
-
-        if (this.options.thStyle)
-            this.options.thStyle(th);
-    }
-
-    public styleCell(td: HTMLTableCellElement, row?: TRow)
-    {
-        if (this.options.className)
-            td.className = this.options.className;
-
         if (this.pathParts)
         {
             var value = dereferencePath(row, this.pathParts);
@@ -81,8 +99,7 @@ export class TextColumn<TRow> implements IColumn<TRow>
             td.textContent = this.options.value(row);
         }
 
-        if (this.options.tdStyle)
-            this.options.tdStyle(td, row);
+        super.styleCell(td, row);
     }
 }
 
@@ -95,7 +112,7 @@ export interface IImageColumnOptions<TRow> extends IColumnOptions<TRow>
 
 var imagePathRegExp = new RegExp('^(.*)\\{(.*)\\}(.*)$');
 
-export class ImageColumn<TRow> implements IColumn<TRow>
+export class ImageColumn<TRow> extends ColumnBase<TRow>
 {
     private pathParts: string[];
     private urlPrefix: string;
@@ -103,6 +120,8 @@ export class ImageColumn<TRow> implements IColumn<TRow>
 
     constructor(private options: IImageColumnOptions<TRow>)
     {
+        super(options);
+
         if (!options.url)
             throw new Error("Must provide a url.");
 
@@ -112,23 +131,8 @@ export class ImageColumn<TRow> implements IColumn<TRow>
         this.urlSuffix = groups[3];
     }
 
-    public styleHeader(th: HTMLTableHeaderCellElement)
+    public styleCell(td: HTMLTableCellElement, row: TRow)
     {
-        if (this.options.title)
-            th.textContent = this.options.title;
-
-        if (this.options.className)
-            th.className = this.options.className;
-
-        if (this.options.thStyle)
-            this.options.thStyle(th);
-    }
-
-    public styleCell(td: HTMLTableCellElement, row?: TRow)
-    {
-        if (this.options.className)
-            td.className = this.options.className;
-
         var data = dereferencePath(row, this.pathParts);
         var img = new Image();
         var src = this.urlPrefix + data + this.urlSuffix;
@@ -137,8 +141,7 @@ export class ImageColumn<TRow> implements IColumn<TRow>
         img.src = src;
         td.appendChild(img);
 
-        if (this.options.tdStyle)
-            this.options.tdStyle(td, row);
+        super.styleCell(td, row);
     }
 }
 
