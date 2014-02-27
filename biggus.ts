@@ -213,7 +213,9 @@ export class Grid<TRow>
             var column = this.options.columns[c];
             var td = <HTMLTableCellElement>rowModel.tr.children[c];
 
-            td.className = column.getClassName();
+            var className = column.getClassName();
+            if (className)
+                td.className = className;
 
             var cellContent = column.getCellContent(rowModel.row);
 
