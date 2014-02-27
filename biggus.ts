@@ -100,7 +100,7 @@ export class ImageColumn<TRow> implements IColumn<TRow>
     }
 }
 
-export interface ITableSpecification<TRow>
+export interface IGridOptions<TRow>
 {
     columns: IColumn<TRow>[];
     rowDataId: (rowData: TRow) => string;
@@ -119,7 +119,7 @@ export class Grid<TRow>
     private headerRow: HTMLTableRowElement;
     private rowModelById: {[s:string]: IRowModel<TRow> } = {};
 
-    constructor(public table: HTMLTableElement, public spec: ITableSpecification<TRow>)
+    constructor(public table: HTMLTableElement, public options: IGridOptions<TRow>)
     {
         //
         // Create table sections
@@ -138,9 +138,9 @@ export class Grid<TRow>
         this.headerRow = document.createElement('tr');
         this.thead.appendChild(this.headerRow);
 
-        for (var c = 0; c < this.spec.columns.length; c++)
+        for (var c = 0; c < this.options.columns.length; c++)
         {
-            var column = this.spec.columns[c];
+            var column = this.options.columns[c];
 
             var th = document.createElement('th');
 
@@ -166,7 +166,7 @@ export class Grid<TRow>
     /** Insert or update the provided row in the table. */
     public setRow(row: TRow)
     {
-        var rowId = this.spec.rowDataId(row);
+        var rowId = this.options.rowDataId(row);
 
         var rowModel = this.rowModelById[rowId];
 
@@ -199,7 +199,7 @@ export class Grid<TRow>
     private createRow(): HTMLTableRowElement
     {
         var tr = document.createElement('tr');
-        for (var c = 0; c < this.spec.columns.length; c++)
+        for (var c = 0; c < this.options.columns.length; c++)
             tr.appendChild(document.createElement('td'))
         return tr;
     }
@@ -207,9 +207,9 @@ export class Grid<TRow>
     /** Populate the tr/td elements from the row. */
     private bindRow(rowModel: IRowModel<TRow>)
     {
-        for (var c = 0; c < this.spec.columns.length; c++)
+        for (var c = 0; c < this.options.columns.length; c++)
         {
-            var column = this.spec.columns[c];
+            var column = this.options.columns[c];
             var td = <HTMLTableCellElement>rowModel.element.children[c];
 
             td.className = column.getClassName();
@@ -235,7 +235,7 @@ export class Grid<TRow>
     {
         tr.className = null;
 
-        for (var c = 0; c < this.spec.columns.length; c++)
+        for (var c = 0; c < this.options.columns.length; c++)
         {
             var td = <HTMLTableCellElement>tr.children[c];
             td.className = null;
