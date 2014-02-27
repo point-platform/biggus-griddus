@@ -110,7 +110,7 @@ export interface IGridOptions<TRow>
 interface IRowModel<TRow>
 {
     data: TRow;
-    element: HTMLTableRowElement;
+    tr: HTMLTableRowElement;
 }
 
 export class Grid<TRow>
@@ -176,7 +176,7 @@ export class Grid<TRow>
             // row previously known
             rowModel.data = row;
 
-            var tr = rowModel.element;
+            var tr = rowModel.tr;
 
             this.clearRow(tr);
             this.bindRow(rowModel);
@@ -189,7 +189,7 @@ export class Grid<TRow>
         {
             // row unknown
             var tr = this.createRow();
-            rowModel = {data: row, element: tr};
+            rowModel = {data: row, tr: tr};
             this.rowModelById[rowId] = rowModel;
             this.bindRow(rowModel);
             this.tbody.appendChild(tr);
@@ -211,7 +211,7 @@ export class Grid<TRow>
         for (var c = 0; c < this.options.columns.length; c++)
         {
             var column = this.options.columns[c];
-            var td = <HTMLTableCellElement>rowModel.element.children[c];
+            var td = <HTMLTableCellElement>rowModel.tr.children[c];
 
             td.className = column.getClassName();
 
@@ -231,7 +231,7 @@ export class Grid<TRow>
         }
 
         if (this.options.rowClassName)
-            rowModel.element.className = this.options.rowClassName(rowModel.data);
+            rowModel.tr.className = this.options.rowClassName(rowModel.data);
     }
 
     /** Clears all state from a tr element and all child td elements. */
