@@ -172,6 +172,50 @@ export class BarChartColumn<TRow> extends ColumnBase<TRow>
     }
 }
 
+export enum ActionPresentationType
+{
+    Hyperlink,
+    Button
+}
+
+export interface IActionColumnOptions<TRow> extends IColumnOptions<TRow>
+{
+    text: string;
+    action: (row: TRow)=>void;
+    type?: ActionPresentationType;
+}
+
+export class ActionColumn<TRow> extends ColumnBase<TRow>
+{
+    constructor(private options: IActionColumnOptions<TRow>)
+    {
+        super(options);
+    }
+
+    public styleCell(td: HTMLTableCellElement, row: TRow)
+    {
+        if (this.options.type === ActionPresentationType.Button)
+        {
+            var button = document.createElement('button');
+            button.className = 'action';
+            button.textContent = this.options.text;
+            button.addEventListener('click', () => this.options.action(row));
+            td.appendChild(button);
+        }
+        else
+        {
+            var a = document.createElement('a');
+            a.className = 'action';
+            a.href = '#';
+            a.textContent = this.options.text;
+            a.addEventListener('click', () => this.options.action(row));
+            td.appendChild(a);
+        }
+
+        super.styleCell(td, row);
+    }
+}
+
 export interface IGridOptions<TRow>
 {
     columns: IColumn<TRow>[];
