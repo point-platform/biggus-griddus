@@ -65,6 +65,43 @@ export class Grid<TRow>
         }
     }
 
+    public setRows(rows: TRow[])
+    {
+        for (var r = 0; r < rows.length; r++)
+            this.setRow(rows[r]);
+    }
+
+    public setRow(rowData: TRow)
+    {
+        var rowId = this.spec.rowDataId(rowData);
+
+        var rowModel = this.rowModelById[rowId];
+
+        if (typeof(rowModel) !== "undefined")
+        {
+            // row previously known
+            rowModel.data = rowData;
+
+            var tr = rowModel.element;
+
+            this.clearRow(tr);
+            this.bindRow(rowModel);
+
+            // Flash the row that changed
+            tr.classList.add('highlight-delta');
+            setTimeout(function() { tr.classList.remove('highlight-delta'); }, 100);
+        }
+        else
+        {
+            // row unknown
+            var row = this.createRow();
+            rowModel = {data: rowData, element: row};
+            this.rowModelById[rowId] = rowModel;
+            this.bindRow(rowModel);
+            this.bodyGroup.appendChild(row);
+        }
+    }
+
     private createRow(): HTMLTableRowElement
     {
         var row = document.createElement('tr');
@@ -115,43 +152,6 @@ export class Grid<TRow>
             while (cell.firstChild) {
                 cell.removeChild(cell.firstChild);
             }
-        }
-    }
-
-    public setRows(rows: TRow[])
-    {
-        for (var r = 0; r < rows.length; r++)
-            this.setRow(rows[r]);
-    }
-
-    public setRow(rowData: TRow)
-    {
-        var rowId = this.spec.rowDataId(rowData);
-
-        var rowModel = this.rowModelById[rowId];
-
-        if (typeof(rowModel) !== "undefined")
-        {
-            // row previously known
-            rowModel.data = rowData;
-
-            var tr = rowModel.element;
-
-            this.clearRow(tr);
-            this.bindRow(rowModel);
-
-            // Flash the row that changed
-            tr.classList.add('highlight-delta');
-            setTimeout(function() { tr.classList.remove('highlight-delta'); }, 100);
-        }
-        else
-        {
-            // row unknown
-            var row = this.createRow();
-            rowModel = {data: rowData, element: row};
-            this.rowModelById[rowId] = rowModel;
-            this.bindRow(rowModel);
-            this.bodyGroup.appendChild(row);
         }
     }
 }
