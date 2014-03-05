@@ -199,7 +199,7 @@ export class ActionColumn<TRow> extends ColumnBase<TRow>
             var button = document.createElement('button');
             button.className = 'action';
             button.textContent = this.options.text;
-            button.addEventListener('click', () => this.options.action(row));
+            button.addEventListener('click', e => { e.preventDefault(); this.options.action(row); });
             td.appendChild(button);
         }
         else
@@ -208,7 +208,7 @@ export class ActionColumn<TRow> extends ColumnBase<TRow>
             a.className = 'action';
             a.href = '#';
             a.textContent = this.options.text;
-            a.addEventListener('click', () => this.options.action(row));
+            a.addEventListener('click', e => { e.preventDefault(); this.options.action(row); });
             td.appendChild(a);
         }
 
