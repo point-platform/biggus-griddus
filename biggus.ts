@@ -134,12 +134,15 @@ export class ImageColumn<TRow> extends ColumnBase<TRow>
     public styleCell(td: HTMLTableCellElement, row: TRow)
     {
         var data = dereferencePath(row, this.pathParts);
-        var img = new Image();
-        var src = this.urlPrefix + data + this.urlSuffix;
-        if (this.options.lowerCase)
-            src = src.toLowerCase();
-        img.src = src;
-        td.appendChild(img);
+        if (data)
+        {
+            var img = new Image();
+            var src = this.urlPrefix + data + this.urlSuffix;
+            if (this.options.lowerCase)
+                src = src.toLowerCase();
+            img.src = src;
+            td.appendChild(img);
+        }
 
         super.styleCell(td, row);
     }
