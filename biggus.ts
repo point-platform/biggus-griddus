@@ -270,14 +270,14 @@ export class Grid<TRow>
     }
 
     /** Insert or update the provided rows in the table. */
-    public setRows(rows: TRow[])
+    public setRows(rows: TRow[]): void
     {
         for (var r = 0; r < rows.length; r++)
             this.setRow(rows[r]);
     }
 
     /** Insert or update the provided row in the table. */
-    public setRow(row: TRow)
+    public setRow(row: TRow): void
     {
         var rowId = this.options.rowDataId(row);
 
@@ -318,7 +318,7 @@ export class Grid<TRow>
     }
 
     /** Populate the tr/td elements from the row. */
-    private bindRow(rowModel: IRowModel<TRow>)
+    private bindRow(rowModel: IRowModel<TRow>): void
     {
         for (var c = 0; c < this.options.columns.length; c++)
         {
@@ -333,7 +333,7 @@ export class Grid<TRow>
     }
 
     /** Clears all state from a tr element and all child td elements. */
-    private clearRow(tr: HTMLTableRowElement)
+    private clearRow(tr: HTMLTableRowElement): void
     {
         tr.className = null;
 
