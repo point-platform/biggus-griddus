@@ -17,6 +17,8 @@ export interface IColumn<TRow>
     styleHeader(th: HTMLTableHeaderCellElement): void;
     /** Populate and style a column cell element. */
     styleCell(td: HTMLTableCellElement, row: TRow): void;
+    /** Returns a value for a given row that can be used when sorting this column. */
+    getSortValue(row: TRow): any;
 }
 
 export interface IColumnOptions<TRow>
@@ -68,6 +70,8 @@ export class ColumnBase<TRow> implements IColumn<TRow>
         if (this.optionsBase.tdStyle)
             this.optionsBase.tdStyle(td, row);
     }
+
+    public getSortValue(row: TRow): any { return 0; }
 }
 
 export class TextColumn<TRow> extends ColumnBase<TRow>
@@ -100,6 +104,13 @@ export class TextColumn<TRow> extends ColumnBase<TRow>
         }
 
         super.styleCell(td, row);
+    }
+
+    public getSortValue(row: TRow): any
+    {
+        return this.pathParts
+            ? dereferencePath(row, this.pathParts)
+            : this.options.value(row);
     }
 }
 
@@ -173,6 +184,8 @@ export class BarChartColumn<TRow> extends ColumnBase<TRow>
 
         super.styleCell(td, row);
     }
+
+    public getSortValue(row: TRow): any { return this.options.ratio(row); }
 }
 
 export enum ActionPresentationType
@@ -232,12 +245,27 @@ interface IRowModel<TRow>
     tr: HTMLTableRowElement;
 }
 
+export function clearChildren(el: Element)
+{
+    while (el.hasChildNodes()) {
+        el.removeChild(el.lastChild);
+    }
+}
+
+export enum SortDirection
+{
+    Ascending,
+    Descending
+}
+
 export class Grid<TRow>
 {
     private thead: HTMLTableSectionElement;
     private tbody: HTMLTableSectionElement;
     private headerRow: HTMLTableRowElement;
     private rowModelById: {[s:string]: IRowModel<TRow> } = {};
+    private sortColumn: IColumn<TRow>;
+    private sortDirection: SortDirection = SortDirection.Ascending;
 
     constructor(public table: HTMLTableElement, public options: IGridOptions<TRow>)
     {
@@ -258,15 +286,38 @@ export class Grid<TRow>
         this.headerRow = document.createElement('tr');
         this.thead.appendChild(this.headerRow);
 
-        for (var c = 0; c < this.options.columns.length; c++)
+        var initialiseColumn = (column: IColumn<TRow>) =>
         {
-            var column = this.options.columns[c];
             var th = document.createElement('th');
 
             column.styleHeader(th);
 
+            th.addEventListener('click', () =>
+            {
+                // Clear any other sort hints
+                var headers = this.thead.querySelectorAll('th');
+                for (var i = 0; i < headers.length; i++)
+                {
+                    var header = <HTMLTableHeaderCellElement>headers[i];
+                    header.classList.remove('sort-ascending');
+                    header.classList.remove('sort-descending');
+                }
+
+                // Determine the direction. Multiple clicks toggle the direction.
+                var direction = SortDirection.Ascending;
+                if (this.sortColumn === column && this.sortDirection === SortDirection.Ascending)
+                    direction = SortDirection.Descending;
+
+                this.sortByColumn(column, direction);
+
+                th.classList.add(direction === SortDirection.Ascending ? 'sort-descending' : 'sort-ascending');
+            });
+
             this.headerRow.appendChild(th);
-        }
+        };
+
+        for (var c = 0; c < this.options.columns.length; c++)
+            initialiseColumn(this.options.columns[c]);
     }
 
     /** Insert or update the provided rows in the table. */
@@ -346,5 +397,30 @@ export class Grid<TRow>
                 td.removeChild(td.firstChild);
             }
         }
+    }
+
+    public sortByColumn(column: IColumn<TRow>, direction: SortDirection): void
+    {
+        this.sortColumn = column;
+        this.sortDirection = direction;
+
+        clearChildren(this.tbody);
+
+        var models: IRowModel<TRow>[] = [];
+
+        for (var id in this.rowModelById)
+            models.push(this.rowModelById[id]);
+
+        var dir = direction === SortDirection.Ascending ? 1 : -1;
+
+        models.sort((a, b) =>
+        {
+            var v1 = column.getSortValue(a.row);
+            var v2 = column.getSortValue(b.row);
+            return dir * (v1 < v2 ? -1 : v1 === v2 ? 0 : 1);
+        });
+
+        for (var i = 0; i < models.length; i++)
+            this.tbody.appendChild(models[i].tr);
     }
 }
