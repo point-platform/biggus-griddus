@@ -14,9 +14,9 @@ function dereferencePath(obj: Object, pathParts: string[])
 export interface IColumn<TRow>
 {
     /** Populate and style the column's header element. */
-    styleHeader(th: HTMLTableHeaderCellElement);
+    styleHeader(th: HTMLTableHeaderCellElement): void;
     /** Populate and style a column cell element. */
-    styleCell(td: HTMLTableCellElement, row: TRow);
+    styleCell(td: HTMLTableCellElement, row: TRow): void;
 }
 
 export interface IColumnOptions<TRow>
