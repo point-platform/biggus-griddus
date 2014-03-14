@@ -265,7 +265,7 @@ export class Grid<TRow>
 
             column.styleHeader(th);
 
-            this.headerRow.appendChild(th)
+            this.headerRow.appendChild(th);
         }
     }
 
