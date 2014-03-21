@@ -89,19 +89,27 @@ export class TextColumn<TRow> extends ColumnBase<TRow>
             this.pathParts = options.path.split('.');
     }
 
-    public styleCell(td: HTMLTableCellElement, row: TRow)
+    public getText(row: TRow): string
     {
         if (this.pathParts)
         {
             var value = dereferencePath(row, this.pathParts);
             if (value != null)
-                td.textContent = value.toString();
+                return value.toString();
         }
         else
         {
             console.assert(!!this.options.value);
-            td.textContent = this.options.value(row);
+            return this.options.value(row);
         }
+    }
+
+    public styleCell(td: HTMLTableCellElement, row: TRow)
+    {
+        var text = this.getText(row);
+
+        if (text != null)
+            td.textContent = text;
 
         super.styleCell(td, row);
     }
@@ -111,6 +119,29 @@ export class TextColumn<TRow> extends ColumnBase<TRow>
         return this.pathParts
             ? dereferencePath(row, this.pathParts)
             : this.options.value(row);
+    }
+}
+
+/** A column that presents its contents in a solid tile positioned within the cell and not necessarily flush to its edges. */
+export class TextTileColumn<TRow> extends TextColumn<TRow>
+{
+    constructor(options: ITextColumnOptions<TRow>)
+    {
+        super(options);
+    }
+
+    public styleCell(td: HTMLTableCellElement, row: TRow)
+    {
+        super.styleCell(td, row);
+
+        var text = td.textContent;
+
+        td.textContent = null;
+
+        var div = document.createElement('div');
+        div.textContent = text;
+        div.className = 'tile';
+        td.appendChild(div);
     }
 }
 
