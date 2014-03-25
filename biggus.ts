@@ -17,6 +17,8 @@ export interface IColumn<TRow>
     styleHeader(th: HTMLTableHeaderCellElement): void;
     /** Populate and style a column cell element. */
     styleCell(td: HTMLTableCellElement, row: TRow): void;
+    /** Indicates whether this column may be sorted using getSortValue. */
+    isSortable: boolean;
     /** Returns a value for a given row that can be used when sorting this column. */
     getSortValue(row: TRow): any;
 }
@@ -43,8 +45,12 @@ export interface ITextColumnOptions<TRow> extends IColumnOptions<TRow>
 
 export class ColumnBase<TRow> implements IColumn<TRow>
 {
+    public isSortable: boolean;
+
     constructor(private optionsBase: IColumnOptions<TRow>)
-    {}
+    {
+        this.isSortable = true;
+    }
 
     public styleHeader(th: HTMLTableHeaderCellElement)
     {
@@ -150,6 +156,8 @@ export interface IImageColumnOptions<TRow> extends IColumnOptions<TRow>
     /** A dot-separated path to the value on the row object. */
     url?: string;
     lowerCase?: boolean;
+    /** Indicates whether this column may be sorted. Defaults to false. */
+    isSortable?: boolean;
 }
 
 var imagePathRegExp = new RegExp('^(.*)\\{(.*)\\}(.*)$');
@@ -163,6 +171,8 @@ export class ImageColumn<TRow> extends ColumnBase<TRow>
     constructor(private options: IImageColumnOptions<TRow>)
     {
         super(options);
+
+        this.isSortable = !!options.isSortable;
 
         if (!options.url)
             throw new Error("Must provide a url.");
@@ -230,6 +240,8 @@ export interface IActionColumnOptions<TRow> extends IColumnOptions<TRow>
     text: string;
     action: (row: TRow)=>void;
     type?: ActionPresentationType;
+    /** Indicates whether this column may be sorted. Defaults to false. */
+    isSortable?: boolean;
 }
 
 export class ActionColumn<TRow> extends ColumnBase<TRow>
@@ -237,6 +249,8 @@ export class ActionColumn<TRow> extends ColumnBase<TRow>
     constructor(private options: IActionColumnOptions<TRow>)
     {
         super(options);
+
+        this.isSortable = !!options.isSortable;
     }
 
     public styleCell(td: HTMLTableCellElement, row: TRow)
@@ -323,26 +337,31 @@ export class Grid<TRow>
 
             column.styleHeader(th);
 
-            th.addEventListener('click', () =>
+            if (column.isSortable)
             {
-                // Clear any other sort hints
-                var headers = this.thead.querySelectorAll('th');
-                for (var i = 0; i < headers.length; i++)
+                th.classList.add('sortable');
+
+                th.addEventListener('click', () =>
                 {
-                    var header = <HTMLTableHeaderCellElement>headers[i];
-                    header.classList.remove('sort-ascending');
-                    header.classList.remove('sort-descending');
-                }
+                    // Clear any other sort hints
+                    var headers = this.thead.querySelectorAll('th');
+                    for (var i = 0; i < headers.length; i++)
+                    {
+                        var header = <HTMLTableHeaderCellElement>headers[i];
+                        header.classList.remove('sort-ascending');
+                        header.classList.remove('sort-descending');
+                    }
 
-                // Determine the direction. Multiple clicks toggle the direction.
-                var direction = SortDirection.Ascending;
-                if (this.sortColumn === column && this.sortDirection === SortDirection.Ascending)
-                    direction = SortDirection.Descending;
+                    // Determine the direction. Multiple clicks toggle the direction.
+                    var direction = SortDirection.Ascending;
+                    if (this.sortColumn === column && this.sortDirection === SortDirection.Ascending)
+                        direction = SortDirection.Descending;
 
-                this.sortByColumn(column, direction);
+                    this.sortByColumn(column, direction);
 
-                th.classList.add(direction === SortDirection.Ascending ? 'sort-descending' : 'sort-ascending');
-            });
+                    th.classList.add(direction === SortDirection.Ascending ? 'sort-descending' : 'sort-ascending');
+                });
+            }
 
             this.headerRow.appendChild(th);
         };
