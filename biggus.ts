@@ -3,7 +3,7 @@
  * @date 22 Jan 2014
  */
 
-function dereferencePath(obj: Object, pathParts: string[])
+function dereferencePath(obj: Object, pathParts: string[]): any
 {
     var i = 0;
     while (obj && i < pathParts.length)
@@ -40,7 +40,7 @@ export interface ITextColumnOptions<TRow> extends IColumnOptions<TRow>
     /** A dot-separated path to the value on the row object. */
     path?: string;
     /** A function that returns the text to display for this column/row. */
-    value?: (row: TRow)=>string;
+    value?: (row: TRow)=>any;
 }
 
 export class ColumnBase<TRow> implements IColumn<TRow>
@@ -82,7 +82,7 @@ export class ColumnBase<TRow> implements IColumn<TRow>
 
 export class TextColumn<TRow> extends ColumnBase<TRow>
 {
-    private pathParts: string[];
+    public pathParts: string[];
 
     constructor(private options: ITextColumnOptions<TRow>)
     {
@@ -148,6 +148,51 @@ export class TextTileColumn<TRow> extends TextColumn<TRow>
         div.textContent = text;
         div.className = 'tile';
         td.appendChild(div);
+    }
+}
+
+export interface INumericColumnOptions<TRow> extends IColumnOptions<TRow>
+{
+    /** A dot-separated path to the value on the row object. */
+    path?: string;
+    /** A function that returns the text to display for this column/row. */
+    value?: (row: TRow)=>number;
+    /** The number of decimal places after the zero to display. */
+    precision?: number;
+    /** Whether to hide zero valued cells. Default to false. */
+    hideZero?: boolean;
+}
+
+export class NumericColumn<TRow> extends TextColumn<TRow>
+{
+    constructor(private numericOptions: INumericColumnOptions<TRow>)
+    {
+        super(numericOptions);
+        if (this.numericOptions.precision == null) this.numericOptions.precision = 0;
+        if (this.numericOptions.hideZero == null) this.numericOptions.hideZero = false;
+    }
+
+    public styleCell(td: HTMLTableCellElement, row: TRow)
+    {
+        super.styleCell(td, row);
+        td.classList.add('numeric');
+    }
+
+    public getText(row: TRow): string
+    {
+        var value = this.pathParts
+            ? dereferencePath(row, this.pathParts)
+            : this.numericOptions.value(row);
+
+        if (value == null)
+            return '';
+
+        console.assert(typeof(value) === 'number');
+
+        if (value === 0 && this.numericOptions.hideZero)
+            return '';
+
+        return value.toFixed(this.numericOptions.precision);
     }
 }
 
