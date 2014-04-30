@@ -178,6 +178,12 @@ export class NumericColumn<TRow> extends TextColumn<TRow>
         td.classList.add('numeric');
     }
 
+    public styleHeader(th: HTMLTableHeaderCellElement)
+    {
+        super.styleHeader(th);
+        th.classList.add('numeric');
+    }
+
     public getText(row: TRow): string
     {
         var value = this.pathParts
