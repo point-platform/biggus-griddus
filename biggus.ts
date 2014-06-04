@@ -1,6 +1,5 @@
 /**
- * @author Drew Noakes
- * @date 22 Jan 2014
+ * @author Drew Noakes https://drewnoakes.com
  */
 
 function dereferencePath(obj: Object, pathParts: string[]): any
@@ -457,6 +456,11 @@ export class Grid<TRow>
             this.rowModelById[rowId] = rowModel;
             this.bindRow(rowModel);
             this.tbody.appendChild(tr);
+
+            var notifyRow = (<INotifyChange<TRow>><any>row);
+
+            if (notifyRow.subscribeChange)
+                notifyRow.subscribeChange(row => this.bindRow(rowModel));
         }
     }
 
@@ -524,4 +528,39 @@ export class Grid<TRow>
         for (var i = 0; i < models.length; i++)
             this.tbody.appendChild(models[i].tr);
     }
+}
+
+
+export interface INotifyChange<T>
+{
+    subscribeChange(callback: (item:T)=>void): void;
+    notifyChange();
+}
+
+class NotifyChange
+{
+    private callbacks: {(item:any):void}[];
+
+    public subscribeChange(callback: (item:any)=>void)
+    {
+        if (!this.callbacks)
+            this.callbacks = [];
+        this.callbacks.push(callback);
+    }
+
+    public notifyChange()
+    {
+        if (this.callbacks)
+        {
+            for (var i = 0; i < this.callbacks.length; i++)
+                this.callbacks[i](this);
+        }
+    }
+}
+
+var notifyChangePrototype = Object.create(NotifyChange.prototype);
+
+export function mixinNotifyChange(obj: any)
+{
+    obj.__proto__ = notifyChangePrototype;
 }
