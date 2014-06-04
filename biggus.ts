@@ -460,7 +460,13 @@ export class Grid<TRow>
             var notifyRow = (<INotifyChange<TRow>><any>row);
 
             if (notifyRow.subscribeChange)
-                notifyRow.subscribeChange(row => this.bindRow(rowModel));
+            {
+                notifyRow.subscribeChange(_ =>
+                {
+                    this.clearRow(tr);
+                    this.bindRow(rowModel)
+                });
+            }
         }
     }
 
