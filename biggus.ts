@@ -160,6 +160,8 @@ export interface INumericColumnOptions<TRow> extends IColumnOptions<TRow>
     precision?: number;
     /** Whether to hide zero valued cells. Default to false. */
     hideZero?: boolean;
+    /** Whether to hide NaN valued cells. Default to false. */
+    hideNaN?: boolean;
 }
 
 export class NumericColumn<TRow> extends TextColumn<TRow>
@@ -195,6 +197,9 @@ export class NumericColumn<TRow> extends TextColumn<TRow>
         console.assert(typeof(value) === 'number');
 
         if (value === 0 && this.numericOptions.hideZero)
+            return '';
+
+        if (isNaN(value) && this.numericOptions.hideNaN)
             return '';
 
         return value.toFixed(this.numericOptions.precision);
