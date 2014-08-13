@@ -507,7 +507,7 @@ export class Grid<TRow>
         for (var c = 0; c < this.options.columns.length; c++)
         {
             var td = <HTMLTableCellElement>tr.children[c];
-            td.className = null;
+            td.removeAttribute("class");
             td.textContent = null;
             while (td.firstChild) {
                 td.removeChild(td.firstChild);
