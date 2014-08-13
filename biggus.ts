@@ -10,6 +10,33 @@ function dereferencePath(obj: Object, pathParts: string[]): any
     return obj;
 }
 
+function toFixedFix(n: number, prec: number): number
+{
+    // Fix for IE parseFloat(0.55).toFixed(0) = 0;
+    var k = Math.pow(10, prec);
+    return Math.round(n * k) / k;
+}
+
+function fomatNumber(num: number, decimals: number)
+{
+    var n = !isFinite(+num) ? 0 : +num,
+        prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
+        s = (prec ? toFixedFix(n, prec) : Math.round(n)).toString().split('.');
+
+    if (s[0].length > 3)
+    {
+        s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, ',');
+    }
+
+    if ((s[1] || '').length < prec)
+    {
+        s[1] = s[1] || '';
+        s[1] += new Array(prec - s[1].length + 1).join('0');
+    }
+
+    return s.join('.');
+}
+
 export interface IColumn<TRow>
 {
     /** Populate and style the column's header element. */
@@ -202,7 +229,7 @@ export class NumericColumn<TRow> extends TextColumn<TRow>
         if (isNaN(value) && this.numericOptions.hideNaN)
             return '';
 
-        return value.toFixed(this.numericOptions.precision);
+        return fomatNumber(value, this.numericOptions.precision);
     }
 }
 
