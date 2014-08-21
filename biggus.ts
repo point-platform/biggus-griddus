@@ -597,22 +597,30 @@ export class Grid<TRow>
 
 export interface INotifyChange<T>
 {
-    subscribeChange(callback: (item:T)=>void): void;
-    notifyChange();
+    subscribeChange(callback: (item:T)=>void): ()=>void;
+    notifyChange(): void;
 }
 
 class NotifyChange
 {
     private callbacks: {(item:any):void}[];
 
-    public subscribeChange(callback: (item:any)=>void)
+    public subscribeChange(callback: (item:any)=>void): ()=>void
     {
         if (!this.callbacks)
             this.callbacks = [];
         this.callbacks.push(callback);
+        return () =>
+        {
+            var index = this.callbacks.indexOf(callback);
+            if (index === -1)
+                console.warn("Attempt to unsubscribe unknown subscriber");
+            else
+                this.callbacks.splice(index, 1);
+        };
     }
 
-    public notifyChange()
+    public notifyChange(): void
     {
         if (this.callbacks)
         {
