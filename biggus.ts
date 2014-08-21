@@ -636,3 +636,86 @@ export function mixinNotifyChange(obj: any)
 {
     obj.__proto__ = notifyChangePrototype;
 }
+
+enum CollectionChangeType
+{
+    Insert,
+    Update,
+    Remove,
+    Move
+}
+
+class CollectionChange<T>
+{
+    public type: CollectionChangeType;
+    public item: T;
+    public newIndex: number;
+    public oldIndex: number;
+
+    public static insert<U>(item: U, index: number): CollectionChange<U>
+    {
+        var chg = new CollectionChange<U>();
+        chg.type = CollectionChangeType.Insert;
+        chg.item = item;
+        chg.newIndex = index;
+        chg.oldIndex = -1;
+        return chg;
+    }
+
+    public static remove<U>(item: U, index: number): CollectionChange<U>
+    {
+        var chg = new CollectionChange<U>();
+        chg.type = CollectionChangeType.Remove;
+        chg.item = item;
+        chg.newIndex = -1;
+        chg.oldIndex = index;
+        return chg;
+    }
+
+    public static update<U>(item: U, index: number): CollectionChange<U>
+    {
+        var chg = new CollectionChange<U>();
+        chg.type = CollectionChangeType.Update;
+        chg.item = item;
+        chg.newIndex = index;
+        chg.oldIndex = -1;
+        return chg;
+    }
+
+    public static move<U>(item: U, newIndex: number, oldIndex: number): CollectionChange<U>
+    {
+        var chg = new CollectionChange<U>();
+        chg.type = CollectionChangeType.Move;
+        chg.item = item;
+        chg.newIndex = newIndex;
+        chg.oldIndex = oldIndex;
+        return chg;
+    }
+}
+
+interface IObservableCollection<T>
+{
+    changed: Event<CollectionChange<T>>;
+}
+
+/**
+ * A basic, observable, append-only data source.
+ */
+class DataSource<T> implements IObservableCollection<T>
+{
+    public changed: Event<CollectionChange<T>>;
+
+    private items: T[] = [];
+
+    public add(item: T)
+    {
+        this.items.push(item);
+        var change: CollectionChange<T> = CollectionChange.insert(item, this.items.length - 1);
+        this.changed.raise(change);
+    }
+
+    public get(index: number)
+    {
+        return this.items[index];
+    }
+}
