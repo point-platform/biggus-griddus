@@ -372,6 +372,31 @@ interface IRowModel<TRow>
     tr: HTMLTableRowElement;
 }
 
+class Event<T>
+{
+    private callbacks: {(item:T):void}[] = [];
+
+    public subscribe(callback: (item: T)=>void): ()=>void
+    {
+        this.callbacks.push(callback);
+
+        return () =>
+        {
+            var index = this.callbacks.indexOf(callback);
+            if (index === -1)
+                console.warn("Attempt to unsubscribe unknown subscriber");
+            else
+                this.callbacks.splice(index, 1);
+        };
+    }
+
+    public raise(item: T)
+    {
+        for (var i = 0; i < this.callbacks.length; i++)
+            this.callbacks[i](item);
+    }
+}
+
 export function clearChildren(el: Element)
 {
     while (el.hasChildNodes()) {
