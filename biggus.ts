@@ -17,7 +17,7 @@ function toFixedFix(n: number, prec: number): number
     return Math.round(n * k) / k;
 }
 
-function fomatNumber(num: number, decimals: number)
+function formatNumber(num: number, decimals: number)
 {
     var n = !isFinite(+num) ? 0 : +num,
         prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
@@ -229,7 +229,7 @@ export class NumericColumn<TRow> extends TextColumn<TRow>
         if (isNaN(value) && this.numericOptions.hideNaN)
             return '';
 
-        return fomatNumber(value, this.numericOptions.precision);
+        return formatNumber(value, this.numericOptions.precision);
     }
 }
 
