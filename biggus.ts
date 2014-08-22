@@ -601,12 +601,21 @@ class FilterView<T> implements IObservableCollection<T>
             {
                 if (!passesFilter)
                     return;
+                // TODO implement
+                break;
+            }
+            case CollectionChangeType.Update:
+            {
+                if (!passesFilter)
+                    return;
+                // TODO implement
                 break;
             }
             case CollectionChangeType.Move:
             {
                 console.error("Move not supported");
                 debugger;
+                break;
             }
         }
     }
