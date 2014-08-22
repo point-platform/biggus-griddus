@@ -167,6 +167,21 @@ export class TextColumn<TRow> extends ColumnBase<TRow>
             ? dereferencePath(row, this.pathParts)
             : this.options.value(row);
     }
+
+    public setFilterText(text: string)
+    {
+        if (!!text)
+        {
+            this.isFiltering = true;
+            this.filterPredicate = (item: TRow) => this.getText(item).indexOf(text) !== -1;
+        }
+        else
+        {
+            this.isFiltering = false;
+            this.filterPredicate = null;
+        }
+        this.filterChanged.raise(this);
+    }
 }
 
 /** A column that presents its contents in a solid tile positioned within the cell and not necessarily flush to its edges. */
@@ -598,25 +613,16 @@ class FilterView<T> implements IDataSource<T>
     private itemFilterState: {[itemId: string]:boolean} = {};
 
     constructor(private source: IDataSource<T>,
-                private condition: (item: T)=>boolean)
+                private predicate: (item: T)=>boolean)
     {
         source.changed.subscribe(this.onSourceChanged.bind(this));
 
-        var items = source.getAllItems();
-        for (var i = 0; i < items.length; i++)
-        {
-            var item = items[i];
-            var passesFilter = condition(item);
-            var itemId = source.getItemId(item);
-            this.itemFilterState[itemId] = passesFilter;
-            if (passesFilter)
-                this.items.push(item);
-        }
+        this.setPredicate(null);
     }
 
     private onSourceChanged(event: CollectionChange<T>)
     {
-        var passesFilter = this.condition(event.item);
+        var passesFilter = !this.predicate || this.predicate(event.item);
 
         switch (event.type)
         {
@@ -625,14 +631,14 @@ class FilterView<T> implements IDataSource<T>
                 console.assert(typeof(this.itemFilterState[event.itemId]) === 'undefined');
                 this.itemFilterState[event.itemId] = passesFilter;
                 if (passesFilter)
-                    this.append(event);
+                    this.append(event.item, event.itemId);
                 break;
             }
             case CollectionChangeType.Remove:
             {
                 if (!passesFilter)
                     return;
-                this.remove(event);
+                this.remove(event.item, event.itemId);
                 delete this.itemFilterState[event.itemId];
                 break;
             }
@@ -655,10 +661,10 @@ class FilterView<T> implements IDataSource<T>
 
                 if (!priorState) {
                     // Newly passes the filter -- add
-                    this.append(event);
+                    this.append(event.item, event.itemId);
                 } else {
                     // Newly fails the filter -- remove
-                    this.remove(event);
+                    this.remove(event.item, event.itemId);
                 }
                 break;
             }
@@ -671,18 +677,39 @@ class FilterView<T> implements IDataSource<T>
         }
     }
 
-    private append(event: CollectionChange<T>): void
+    public setPredicate(predicate: (item: T)=>boolean)
     {
-        this.items.push(event.item);
-        this.changed.raise(CollectionChange.insert(event.item, event.itemId, this.items.length - 1));
+        this.predicate = predicate;
+        var items = this.source.getAllItems();
+        for (var i = 0; i < items.length; i++)
+        {
+            var item = items[i];
+            var passesFilter = !predicate || predicate(item);
+            var itemId = this.source.getItemId(item);
+            var priorState = this.itemFilterState[itemId];
+            if (priorState === passesFilter)
+                continue;
+            this.itemFilterState[itemId] = passesFilter;
+            if (passesFilter)
+                this.append(item, itemId);
+            else
+                this.remove(item, itemId)
+        }
     }
 
-    private remove(event: CollectionChange<T>): void
+    private append(item: T, itemId: string): void
     {
-        var index = this.items.indexOf(event.item);
+        this.items.push(item);
+        this.changed.raise(CollectionChange.insert(item, itemId, this.items.length - 1));
+    }
+
+    private remove(item: T, itemId: string): void
+    {
+        // TODO O(N) scan -- does any consumer of this event actually use the index?
+        var index = this.items.indexOf(item);
         console.assert(index !== -1);
         this.items.splice(index, 1);
-        this.changed.raise(CollectionChange.remove(event.item, event.itemId, index));
+        this.changed.raise(CollectionChange.remove(item, itemId, index));
     }
 
     getAllItems(): T[]
@@ -777,6 +804,17 @@ export class Grid<TRow>
                 var input = document.createElement('input');
                 input.type = 'text';
                 td.appendChild(input);
+
+                if ((<any>column).setFilterText)
+                {
+                    var textColumn = <TextColumn<TRow>>column;
+                    input.addEventListener('change', _ =>
+                    {
+                        textColumn.setFilterText(input.value);
+                    });
+                }
+
+                column.filterChanged.subscribe(this.updateFilter.bind(this));
             }
 
             this.filterRow.appendChild(td);
@@ -796,6 +834,31 @@ export class Grid<TRow>
         var items = this.source.getAllItems();
         for (var i = 0; i < items.length; i++)
             this.insertRow(items[i], this.source.getItemId(items[i]));
+    }
+
+    private updateFilter()
+    {
+        var preds = [];
+        for (var c = 0; c < this.options.columns.length; c++)
+        {
+            var column = this.options.columns[c];
+            if (column.isFilterable && column.isFiltering)
+                preds.push(column.filterPredicate);
+        }
+        if (preds.length)
+        {
+            this.filterSource.setPredicate(item =>
+            {
+                for (var i = 0; i < preds.length; i++)
+                    if (!preds[i](item))
+                        return false;
+                return true;
+            });
+        }
+        else
+        {
+            this.filterSource.setPredicate(null);
+        }
     }
 
     private onSourceChanged(event: CollectionChange<TRow>): void
