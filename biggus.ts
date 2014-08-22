@@ -701,6 +701,7 @@ export class Grid<TRow>
     private thead: HTMLTableSectionElement;
     private tbody: HTMLTableSectionElement;
     private headerRow: HTMLTableRowElement;
+    private filterRow: HTMLTableRowElement;
     private rowModelById: {[s:string]: IRowModel<TRow> } = {};
     private sortColumn: IColumn<TRow>;
     private sortDirection: SortDirection = SortDirection.Ascending;
@@ -724,10 +725,17 @@ export class Grid<TRow>
         //
 
         this.headerRow = document.createElement('tr');
+        this.headerRow.className = 'header';
         this.thead.appendChild(this.headerRow);
+
+        this.filterRow = document.createElement('tr');
+        this.filterRow.className = 'filter';
+        this.thead.appendChild(this.filterRow);
 
         var initialiseColumn = (column: IColumn<TRow>) =>
         {
+            // Header row
+
             var th = document.createElement('th');
 
             column.styleHeader(th);
@@ -759,6 +767,19 @@ export class Grid<TRow>
             }
 
             this.headerRow.appendChild(th);
+
+            // Filter row
+
+            var td = document.createElement('td');
+
+            if (column.isFilterable)
+            {
+                var input = document.createElement('input');
+                input.type = 'text';
+                td.appendChild(input);
+            }
+
+            this.filterRow.appendChild(td);
         };
 
         for (var c = 0; c < this.options.columns.length; c++)
