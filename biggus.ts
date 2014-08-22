@@ -905,7 +905,8 @@ export class Grid<TRow>
             }
             case CollectionChangeType.Move:
             {
-                // TODO
+                this.moveRow(event.oldIndex, event.newIndex);
+                this.updateRow(event.itemId);
                 break;
             }
             case CollectionChangeType.Update:
@@ -946,6 +947,16 @@ export class Grid<TRow>
         this.clearRow(rowModel.tr);
         this.bindRow(rowModel);
         this.flashRow(rowModel.tr);
+    }
+
+    private moveRow(oldIndex: number, newIndex: number)
+    {
+        var child = this.tbody.children[oldIndex];
+
+        if (newIndex === this.tbody.childElementCount)
+            this.tbody.appendChild(child);
+        else
+            this.tbody.insertBefore(child, this.tbody.children[newIndex]);
     }
 
     ///** Insert or update the provided row in the table. */
