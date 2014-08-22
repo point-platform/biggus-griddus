@@ -536,6 +536,14 @@ export class DataSource<T> implements IDataSource<T>
 
     public add(item: T)
     {
+        var notifyItem: INotifyChange<T> = <any>item;
+        if (notifyItem.subscribeChange && typeof(notifyItem.subscribeChange) === 'function') {
+            notifyItem.subscribeChange(changedItem => {
+                // TODO is this O(N) scan a problem?
+                var index = this.items.indexOf(changedItem);
+                this.changed.raise(CollectionChange.update(changedItem, index));
+            });
+        }
         this.items.push(item);
         var change: CollectionChange<T> = CollectionChange.insert(item, this.items.length - 1);
         this.changed.raise(change);
