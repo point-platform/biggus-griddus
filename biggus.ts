@@ -362,7 +362,6 @@ export class ActionColumn<TRow> extends ColumnBase<TRow>
 export interface IGridOptions<TRow>
 {
     columns: IColumn<TRow>[];
-    rowDataId: (rowData: TRow) => string;
     rowClassName?: (rowData: TRow) => string;
 }
 
@@ -464,44 +463,49 @@ export class CollectionChange<T>
 {
     public type: CollectionChangeType;
     public item: T;
+    public itemId: string;
     public newIndex: number;
     public oldIndex: number;
 
-    public static insert<U>(item: U, index: number): CollectionChange<U>
+    public static insert<U>(item: U, itemId: string, index: number): CollectionChange<U>
     {
         var chg = new CollectionChange<U>();
         chg.type = CollectionChangeType.Insert;
         chg.item = item;
+        chg.itemId = itemId;
         chg.newIndex = index;
         chg.oldIndex = -1;
         return chg;
     }
 
-    public static remove<U>(item: U, index: number): CollectionChange<U>
+    public static remove<U>(item: U, itemId: string, index: number): CollectionChange<U>
     {
         var chg = new CollectionChange<U>();
         chg.type = CollectionChangeType.Remove;
         chg.item = item;
+        chg.itemId = itemId;
         chg.newIndex = -1;
         chg.oldIndex = index;
         return chg;
     }
 
-    public static update<U>(item: U, index: number): CollectionChange<U>
+    public static update<U>(item: U, itemId: string, index: number): CollectionChange<U>
     {
         var chg = new CollectionChange<U>();
         chg.type = CollectionChangeType.Update;
         chg.item = item;
+        chg.itemId = itemId;
         chg.newIndex = index;
         chg.oldIndex = -1;
         return chg;
     }
 
-    public static move<U>(item: U, newIndex: number, oldIndex: number): CollectionChange<U>
+    public static move<U>(item: U, itemId: string, newIndex: number, oldIndex: number): CollectionChange<U>
     {
         var chg = new CollectionChange<U>();
         chg.type = CollectionChangeType.Move;
         chg.item = item;
+        chg.itemId = itemId;
         chg.newIndex = newIndex;
         chg.oldIndex = oldIndex;
         return chg;
@@ -516,6 +520,7 @@ export interface IObservableCollection<T>
 export interface IDataSource<T> extends IObservableCollection<T>
 {
     getAllItems(): T[];
+    getItemId(item: T): string;
 }
 
 /**
@@ -527,7 +532,7 @@ export class DataSource<T> implements IDataSource<T>
 
     private items: T[] = [];
 
-    constructor(items?: T[])
+    constructor(private itemIdAccessor: (item: T)=>string, items?: T[])
     {
         for (var i = 0; items && i < items.length; i++) {
             this.add(items[i]);
@@ -536,16 +541,17 @@ export class DataSource<T> implements IDataSource<T>
 
     public add(item: T)
     {
+        var itemId = this.itemIdAccessor(item);
         var notifyItem: INotifyChange<T> = <any>item;
         if (notifyItem.subscribeChange && typeof(notifyItem.subscribeChange) === 'function') {
             notifyItem.subscribeChange(changedItem => {
                 // TODO is this O(N) scan a problem?
                 var index = this.items.indexOf(changedItem);
-                this.changed.raise(CollectionChange.update(changedItem, index));
+                this.changed.raise(CollectionChange.update(changedItem, itemId, index));
             });
         }
         this.items.push(item);
-        var change: CollectionChange<T> = CollectionChange.insert(item, this.items.length - 1);
+        var change: CollectionChange<T> = CollectionChange.insert(item, itemId, this.items.length - 1);
         this.changed.raise(change);
     }
 
@@ -557,6 +563,11 @@ export class DataSource<T> implements IDataSource<T>
     getAllItems(): T[]
     {
         return this.items;
+    }
+
+    getItemId(item: T): string
+    {
+        return this.itemIdAccessor(item);
     }
 }
 
@@ -583,7 +594,7 @@ class FilterView<T> implements IObservableCollection<T>
                 if (!passesFilter)
                     return;
                 this.items.push(event.item);
-                this.changed.raise(CollectionChange.insert(event.item, this.items.length - 1));
+                this.changed.raise(CollectionChange.insert(event.item, event.itemId, this.items.length - 1));
                 break;
             }
             case CollectionChangeType.Remove:
@@ -671,7 +682,7 @@ export class Grid<TRow>
 
         var items = this.source.getAllItems();
         for (var i = 0; i < items.length; i++)
-            this.insertRow(items[i]);
+            this.insertRow(items[i], this.source.getItemId(items[i]));
     }
 
     private onSourceChanged(event: CollectionChange<TRow>): void
@@ -680,7 +691,7 @@ export class Grid<TRow>
         {
             case CollectionChangeType.Insert:
             {
-                this.insertRow(event.item);
+                this.insertRow(event.item, event.itemId);
                 break;
             }
             case CollectionChangeType.Remove:
@@ -695,27 +706,25 @@ export class Grid<TRow>
             }
             case CollectionChangeType.Update:
             {
-                this.updateRow(event.item);
+                this.updateRow(event.itemId);
                 break;
             }
         }
     }
 
-    private insertRow(item)
+    private insertRow(item: TRow, itemId: string)
     {
-        var rowId = this.options.rowDataId(item);
-        console.assert(typeof(this.rowModelById[rowId]) === 'undefined', "Inserted row should not have a row model");
+        console.assert(typeof(this.rowModelById[itemId]) === 'undefined', "Inserted row should not have a row model");
         var tr = this.createRow();
         var rowModel = {row: item, tr: tr};
-        this.rowModelById[rowId] = rowModel;
+        this.rowModelById[itemId] = rowModel;
         this.bindRow(rowModel);
         this.tbody.appendChild(tr);
     }
 
-    private updateRow(item: TRow)
+    private updateRow(itemId: string)
     {
-        var rowId = this.options.rowDataId(item);
-        var rowModel = this.rowModelById[rowId];
+        var rowModel = this.rowModelById[itemId];
         console.assert(typeof(rowModel) !== "undefined", "Updated row should have a row model");
         this.clearRow(rowModel.tr);
         this.bindRow(rowModel);
