@@ -685,6 +685,7 @@ export class Grid<TRow>
     private rowModelById: {[s:string]: IRowModel<TRow> } = {};
     private sortColumn: IColumn<TRow>;
     private sortDirection: SortDirection = SortDirection.Ascending;
+    private filterSource: FilterView<TRow>;
     private source: IDataSource<TRow>;
 
     constructor(source: IDataSource<TRow>, public table: HTMLTableElement, public options: IGridOptions<TRow>)
@@ -747,7 +748,9 @@ export class Grid<TRow>
         // TODO allow modifying the predicate
         var predicate = item => source.getItemId(item).indexOf("1") !== -1;
 
-        this.source = new FilterView(source, predicate);
+        this.filterSource = new FilterView(source, predicate);
+
+        this.source = this.filterSource;
         this.source.changed.subscribe(this.onSourceChanged.bind(this));
 
         var items = this.source.getAllItems();
