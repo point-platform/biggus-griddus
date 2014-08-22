@@ -826,7 +826,7 @@ export class Grid<TRow>
                 if ((<any>column).setFilterText)
                 {
                     var textColumn = <TextColumn<TRow>>column;
-                    input.addEventListener('change', _ =>
+                    input.addEventListener('input', _ =>
                     {
                         textColumn.setFilterText(input.value);
                     });
