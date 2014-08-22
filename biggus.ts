@@ -372,7 +372,7 @@ interface IRowModel<TRow>
     tr: HTMLTableRowElement;
 }
 
-class Event<T>
+export class Event<T>
 {
     private callbacks: {(item:T):void}[] = [];
 
@@ -452,7 +452,7 @@ export function mixinNotifyChange(obj: any)
     obj.__proto__ = notifyChangePrototype;
 }
 
-enum CollectionChangeType
+export enum CollectionChangeType
 {
     Insert,
     Update,
@@ -460,7 +460,7 @@ enum CollectionChangeType
     Move
 }
 
-class CollectionChange<T>
+export class CollectionChange<T>
 {
     public type: CollectionChangeType;
     public item: T;
@@ -508,7 +508,7 @@ class CollectionChange<T>
     }
 }
 
-interface IObservableCollection<T>
+export interface IObservableCollection<T>
 {
     changed: Event<CollectionChange<T>>;
 }
@@ -516,7 +516,7 @@ interface IObservableCollection<T>
 /**
  * A basic, observable, append-only data source.
  */
-class DataSource<T> implements IObservableCollection<T>
+export class DataSource<T> implements IDataSource<T>
 {
     public changed: Event<CollectionChange<T>>;
 
