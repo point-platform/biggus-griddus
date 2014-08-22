@@ -43,10 +43,18 @@ export interface IColumn<TRow>
     styleHeader(th: HTMLTableHeaderCellElement): void;
     /** Populate and style a column cell element. */
     styleCell(td: HTMLTableCellElement, row: TRow): void;
+
     /** Indicates whether this column may be sorted using getSortValue. */
     isSortable: boolean;
     /** Returns a value for a given row that can be used when sorting this column. */
     getSortValue(row: TRow): any;
+
+    /** Indicates whether this column supports filtering, and if so, via what means. */
+    isFilterable: boolean;
+    isFiltering: boolean;
+    /** Fires when <code>filterPredicate</code> changes, and when <code>isFiltering</code> changes. */
+    filterChanged: Event<IColumn<TRow>>;
+    filterPredicate: (item: TRow)=>boolean;
 }
 
 export interface IColumnOptions<TRow>
@@ -72,6 +80,11 @@ export interface ITextColumnOptions<TRow> extends IColumnOptions<TRow>
 export class ColumnBase<TRow> implements IColumn<TRow>
 {
     public isSortable: boolean;
+
+    public isFilterable: boolean = false;
+    public isFiltering: boolean = false;
+    public filterChanged: Event<IColumn<TRow>> = new Event<IColumn<TRow>>();
+    public filterPredicate: (item: TRow)=>boolean;
 
     constructor(private optionsBase: IColumnOptions<TRow>)
     {
@@ -119,6 +132,8 @@ export class TextColumn<TRow> extends ColumnBase<TRow>
 
         if (options.path)
             this.pathParts = options.path.split('.');
+
+        this.isFilterable = true;
     }
 
     public getText(row: TRow): string
@@ -196,6 +211,10 @@ export class NumericColumn<TRow> extends TextColumn<TRow>
     constructor(private numericOptions: INumericColumnOptions<TRow>)
     {
         super(numericOptions);
+
+        // TODO implement filtering for numeric columns
+        this.isFilterable = false;
+
         if (this.numericOptions.precision == null) this.numericOptions.precision = 0;
         if (this.numericOptions.hideZero == null) this.numericOptions.hideZero = false;
     }
