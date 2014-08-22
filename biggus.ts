@@ -821,6 +821,7 @@ export class Grid<TRow>
             {
                 var input = document.createElement('input');
                 input.type = 'text';
+                input.size = 1;
                 td.appendChild(input);
 
                 if ((<any>column).setFilterText)
