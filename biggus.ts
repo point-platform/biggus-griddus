@@ -527,6 +527,13 @@ export class DataSource<T> implements IDataSource<T>
 
     private items: T[] = [];
 
+    constructor(items?: T[])
+    {
+        for (var i = 0; items && i < items.length; i++) {
+            this.add(items[i]);
+        }
+    }
+
     public add(item: T)
     {
         this.items.push(item);
