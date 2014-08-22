@@ -571,16 +571,28 @@ export class DataSource<T> implements IDataSource<T>
     }
 }
 
-class FilterView<T> implements IObservableCollection<T>
+class FilterView<T> implements IDataSource<T>
 {
-    public changed: Event<CollectionChange<T>>;
+    public changed: Event<CollectionChange<T>> = new Event<CollectionChange<T>>();
 
     private items: T[] = [];
+    private itemFilterState: {[itemId: string]:boolean} = {};
 
-    constructor(private source: IObservableCollection<T>,
+    constructor(private source: IDataSource<T>,
                 private condition: (item: T)=>boolean)
     {
-        source.changed.subscribe(this.onSourceChanged);
+        source.changed.subscribe(this.onSourceChanged.bind(this));
+
+        var items = source.getAllItems();
+        for (var i = 0; i < items.length; i++)
+        {
+            var item = items[i];
+            var passesFilter = condition(item);
+            var itemId = source.getItemId(item);
+            this.itemFilterState[itemId] = passesFilter;
+            if (passesFilter)
+                this.items.push(item);
+        }
     }
 
     private onSourceChanged(event: CollectionChange<T>)
@@ -591,24 +603,44 @@ class FilterView<T> implements IObservableCollection<T>
         {
             case CollectionChangeType.Insert:
             {
-                if (!passesFilter)
-                    return;
-                this.items.push(event.item);
-                this.changed.raise(CollectionChange.insert(event.item, event.itemId, this.items.length - 1));
+                console.assert(typeof(this.itemFilterState[event.itemId]) === 'undefined');
+                this.itemFilterState[event.itemId] = passesFilter;
+                if (passesFilter)
+                    this.append(event);
                 break;
             }
             case CollectionChangeType.Remove:
             {
                 if (!passesFilter)
                     return;
-                // TODO implement
+                this.remove(event);
+                delete this.itemFilterState[event.itemId];
                 break;
             }
             case CollectionChangeType.Update:
             {
-                if (!passesFilter)
+                var priorState = this.itemFilterState[event.itemId];
+                console.assert(typeof(priorState) !== 'undefined');
+                if (priorState === passesFilter)
+                {
+                    if (priorState)
+                    {
+                        // TODO this is an O(N) scan -- do consumers of the event even need index here?
+                        var index = this.items.indexOf(event.item);
+                        console.assert(index !== -1);
+                        this.changed.raise(CollectionChange.update(event.item, event.itemId, index));
+                    }
                     return;
-                // TODO implement
+                }
+                this.itemFilterState[event.itemId] = passesFilter;
+
+                if (!priorState) {
+                    // Newly passes the filter -- add
+                    this.append(event);
+                } else {
+                    // Newly fails the filter -- remove
+                    this.remove(event);
+                }
                 break;
             }
             case CollectionChangeType.Move:
@@ -618,6 +650,30 @@ class FilterView<T> implements IObservableCollection<T>
                 break;
             }
         }
+    }
+
+    private append(event: CollectionChange<T>): void
+    {
+        this.items.push(event.item);
+        this.changed.raise(CollectionChange.insert(event.item, event.itemId, this.items.length - 1));
+    }
+
+    private remove(event: CollectionChange<T>): void
+    {
+        var index = this.items.indexOf(event.item);
+        console.assert(index !== -1);
+        this.items.splice(index, 1);
+        this.changed.raise(CollectionChange.remove(event.item, event.itemId, index));
+    }
+
+    getAllItems(): T[]
+    {
+        return this.items;
+    }
+
+    getItemId(item: T): string
+    {
+        return this.source.getItemId(item);
     }
 }
 
@@ -629,8 +685,9 @@ export class Grid<TRow>
     private rowModelById: {[s:string]: IRowModel<TRow> } = {};
     private sortColumn: IColumn<TRow>;
     private sortDirection: SortDirection = SortDirection.Ascending;
+    private source: IDataSource<TRow>;
 
-    constructor(private source: IDataSource<TRow>, public table: HTMLTableElement, public options: IGridOptions<TRow>)
+    constructor(source: IDataSource<TRow>, public table: HTMLTableElement, public options: IGridOptions<TRow>)
     {
         //
         // Create table sections
@@ -687,6 +744,10 @@ export class Grid<TRow>
         for (var c = 0; c < this.options.columns.length; c++)
             initialiseColumn(this.options.columns[c]);
 
+        // TODO allow modifying the predicate
+        var predicate = item => source.getItemId(item).indexOf("1") !== -1;
+
+        this.source = new FilterView(source, predicate);
         this.source.changed.subscribe(this.onSourceChanged.bind(this));
 
         var items = this.source.getAllItems();
