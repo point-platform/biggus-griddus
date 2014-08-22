@@ -490,7 +490,8 @@ export enum CollectionChangeType
     Insert,
     Update,
     Remove,
-    Move
+    Move,
+    Reset
 }
 
 export class CollectionChange<T>
@@ -542,6 +543,17 @@ export class CollectionChange<T>
         chg.itemId = itemId;
         chg.newIndex = newIndex;
         chg.oldIndex = oldIndex;
+        return chg;
+    }
+
+    public static reset<U>() : CollectionChange<U>
+    {
+        var chg = new CollectionChange<U>();
+        chg.type = CollectionChangeType.Reset;
+        chg.item = null;
+        chg.itemId = null;
+        chg.newIndex = -1;
+        chg.oldIndex = -1;
         return chg;
     }
 }
@@ -671,6 +683,12 @@ class FilterView<T> implements IDataSource<T>
             case CollectionChangeType.Move:
             {
                 console.error("Move not supported");
+                debugger;
+                break;
+            }
+            case CollectionChangeType.Reset:
+            {
+                console.error("Reset not supported");
                 debugger;
                 break;
             }
@@ -831,6 +849,15 @@ export class Grid<TRow>
         this.source = this.filterSource;
         this.source.changed.subscribe(this.onSourceChanged.bind(this));
 
+        this.reset();
+    }
+
+    private reset()
+    {
+        this.rowModelById = {};
+
+        clearChildren(this.tbody);
+
         var items = this.source.getAllItems();
         for (var i = 0; i < items.length; i++)
             this.insertRow(items[i], this.source.getItemId(items[i]));
@@ -883,6 +910,11 @@ export class Grid<TRow>
             case CollectionChangeType.Update:
             {
                 this.updateRow(event.itemId);
+                break;
+            }
+            case CollectionChangeType.Reset:
+            {
+                this.reset();
                 break;
             }
         }
