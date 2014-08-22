@@ -650,8 +650,8 @@ class FilterView<T> implements IDataSource<T>
             {
                 if (!passesFilter)
                     return;
-                this.remove(event.item, event.itemId);
                 delete this.itemFilterState[event.itemId];
+                this.remove(event.item, event.itemId);
                 break;
             }
             case CollectionChangeType.Update:
