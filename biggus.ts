@@ -766,7 +766,7 @@ export class Grid<TRow>
             }
             case CollectionChangeType.Remove:
             {
-                // TODO
+                this.removeRow(event.item, event.itemId);
                 break;
             }
             case CollectionChangeType.Move:
@@ -780,6 +780,14 @@ export class Grid<TRow>
                 break;
             }
         }
+    }
+
+    private removeRow(item: TRow, itemId: string)
+    {
+        console.assert(typeof(this.rowModelById[itemId]) !== 'undefined', "Removed row should have a row model");
+        var rowModel = this.rowModelById[itemId];
+        this.tbody.removeChild(rowModel.tr);
+        delete this.rowModelById[itemId];
     }
 
     private insertRow(item: TRow, itemId: string)
