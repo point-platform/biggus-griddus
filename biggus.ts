@@ -513,6 +513,11 @@ export interface IObservableCollection<T>
     changed: Event<CollectionChange<T>>;
 }
 
+export interface IDataSource<T> extends IObservableCollection<T>
+{
+    getAllItems(): T[];
+}
+
 /**
  * A basic, observable, append-only data source.
  */
