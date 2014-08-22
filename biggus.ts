@@ -518,7 +518,7 @@ export interface IObservableCollection<T>
  */
 export class DataSource<T> implements IDataSource<T>
 {
-    public changed: Event<CollectionChange<T>>;
+    public changed: Event<CollectionChange<T>> = new Event<CollectionChange<T>>();
 
     private items: T[] = [];
 
