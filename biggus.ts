@@ -553,6 +553,11 @@ export class DataSource<T> implements IDataSource<T>
     {
         return this.items[index];
     }
+
+    getAllItems(): T[]
+    {
+        return this.items;
+    }
 }
 
 export class Grid<TRow>
