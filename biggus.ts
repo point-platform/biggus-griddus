@@ -569,7 +569,7 @@ export class Grid<TRow>
     private sortColumn: IColumn<TRow>;
     private sortDirection: SortDirection = SortDirection.Ascending;
 
-    constructor(public table: HTMLTableElement, public options: IGridOptions<TRow>)
+    constructor(private source: IDataSource<TRow>, public table: HTMLTableElement, public options: IGridOptions<TRow>)
     {
         //
         // Create table sections
@@ -614,7 +614,7 @@ export class Grid<TRow>
                     if (this.sortColumn === column && this.sortDirection === SortDirection.Ascending)
                         direction = SortDirection.Descending;
 
-                    this.sortByColumn(column, direction);
+                    //this.sortByColumn(column, direction);
 
                     th.classList.add(direction === SortDirection.Ascending ? 'sort-descending' : 'sort-ascending');
                 });
@@ -625,57 +625,111 @@ export class Grid<TRow>
 
         for (var c = 0; c < this.options.columns.length; c++)
             initialiseColumn(this.options.columns[c]);
+
+        this.source.changed.subscribe(this.onSourceChanged.bind(this));
+
+        var items = this.source.getAllItems();
+        for (var i = 0; i < items.length; i++)
+            this.insertRow(items[i]);
     }
 
-    /** Insert or update the provided rows in the table. */
-    public setRows(rows: TRow[]): void
+    private onSourceChanged(event: CollectionChange<TRow>): void
     {
-        for (var r = 0; r < rows.length; r++)
-            this.setRow(rows[r]);
-    }
-
-    /** Insert or update the provided row in the table. */
-    public setRow(row: TRow): void
-    {
-        var rowId = this.options.rowDataId(row);
-
-        var rowModel = this.rowModelById[rowId];
-
-        if (typeof(rowModel) !== "undefined")
+        switch (event.type)
         {
-            // row previously known
-            rowModel.row = row;
-
-            var tr = rowModel.tr;
-
-            this.clearRow(tr);
-            this.bindRow(rowModel);
-
-            // Flash the row that changed
-            // TODO only queue this timer if the row is visible (once we model this)
-            tr.classList.add('highlight-delta');
-            setTimeout(function() { tr.classList.remove('highlight-delta'); }, 100);
-        }
-        else
-        {
-            // row unknown
-            var tr = this.createRow();
-            rowModel = {row: row, tr: tr};
-            this.rowModelById[rowId] = rowModel;
-            this.bindRow(rowModel);
-            this.tbody.appendChild(tr);
-
-            var notifyRow = (<INotifyChange<TRow>><any>row);
-
-            if (notifyRow.subscribeChange)
+            case CollectionChangeType.Insert:
             {
-                notifyRow.subscribeChange(_ =>
-                {
-                    this.clearRow(tr);
-                    this.bindRow(rowModel)
-                });
+                this.insertRow(event.item);
+                break;
+            }
+            case CollectionChangeType.Remove:
+            {
+                // TODO
+                break;
+            }
+            case CollectionChangeType.Move:
+            {
+                // TODO
+                break;
+            }
+            case CollectionChangeType.Update:
+            {
+                this.updateRow(event.item);
+                break;
             }
         }
+    }
+
+    private insertRow(item)
+    {
+        var rowId = this.options.rowDataId(item);
+        console.assert(typeof(this.rowModelById[rowId]) === 'undefined', "Inserted row should not have a row model");
+        var tr = this.createRow();
+        var rowModel = {row: item, tr: tr};
+        this.rowModelById[rowId] = rowModel;
+        this.bindRow(rowModel);
+        this.tbody.appendChild(tr);
+    }
+
+    private updateRow(item: TRow)
+    {
+        var rowId = this.options.rowDataId(item);
+        var rowModel = this.rowModelById[rowId];
+        console.assert(typeof(rowModel) !== "undefined", "Updated row should have a row model");
+        this.clearRow(rowModel.tr);
+        this.bindRow(rowModel);
+        this.flashRow(rowModel.tr);
+    }
+
+    ///** Insert or update the provided row in the table. */
+    //private setRow(row: TRow): void
+    //{
+    //    var rowId = this.options.rowDataId(row);
+    //
+    //    var rowModel = this.rowModelById[rowId];
+    //
+    //    if (typeof(rowModel) !== "undefined")
+    //    {
+    //        // row previously known
+    //        rowModel.row = row;
+    //
+    //        var tr = rowModel.tr;
+    //
+    //        this.clearRow(tr);
+    //        this.bindRow(rowModel);
+    //        this.flashRow(tr);
+    //    }
+    //    else
+    //    {
+    //        // row unknown
+    //        var tr = this.createRow();
+    //        rowModel = {row: row, tr: tr};
+    //        this.rowModelById[rowId] = rowModel;
+    //        this.bindRow(rowModel);
+    //        this.tbody.appendChild(tr);
+    //
+    //        var notifyRow = (<INotifyChange<TRow>><any>row);
+    //
+    //        if (notifyRow.subscribeChange)
+    //        {
+    //            notifyRow.subscribeChange(_ =>
+    //            {
+    //                this.clearRow(tr);
+    //                this.bindRow(rowModel)
+    //            });
+    //        }
+    //    }
+    //}
+
+    private flashRow(tr: HTMLTableRowElement)
+    {
+        // Flash the row that changed
+        // TODO only queue this timer if the row is visible (once we model this)
+        tr.classList.add('highlight-delta');
+        setTimeout(function ()
+        {
+            tr.classList.remove('highlight-delta');
+        }, 100);
     }
 
     /** Create a new tr element with the correct number of td children. */
@@ -718,28 +772,28 @@ export class Grid<TRow>
         }
     }
 
-    public sortByColumn(column: IColumn<TRow>, direction: SortDirection): void
-    {
-        this.sortColumn = column;
-        this.sortDirection = direction;
-
-        clearChildren(this.tbody);
-
-        var models: IRowModel<TRow>[] = [];
-
-        for (var id in this.rowModelById)
-            models.push(this.rowModelById[id]);
-
-        var dir = direction === SortDirection.Ascending ? 1 : -1;
-
-        models.sort((a, b) =>
-        {
-            var v1 = column.getSortValue(a.row);
-            var v2 = column.getSortValue(b.row);
-            return dir * (v1 < v2 ? -1 : v1 === v2 ? 0 : 1);
-        });
-
-        for (var i = 0; i < models.length; i++)
-            this.tbody.appendChild(models[i].tr);
-    }
+    //public sortByColumn(column: IColumn<TRow>, direction: SortDirection): void
+    //{
+    //    this.sortColumn = column;
+    //    this.sortDirection = direction;
+    //
+    //    clearChildren(this.tbody);
+    //
+    //    var models: IRowModel<TRow>[] = [];
+    //
+    //    for (var id in this.rowModelById)
+    //        models.push(this.rowModelById[id]);
+    //
+    //    var dir = direction === SortDirection.Ascending ? 1 : -1;
+    //
+    //    models.sort((a, b) =>
+    //    {
+    //        var v1 = column.getSortValue(a.row);
+    //        var v2 = column.getSortValue(b.row);
+    //        return dir * (v1 < v2 ? -1 : v1 === v2 ? 0 : 1);
+    //    });
+    //
+    //    for (var i = 0; i < models.length; i++)
+    //        this.tbody.appendChild(models[i].tr);
+    //}
 }
