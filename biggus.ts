@@ -560,6 +560,47 @@ export class DataSource<T> implements IDataSource<T>
     }
 }
 
+class FilterView<T> implements IObservableCollection<T>
+{
+    public changed: Event<CollectionChange<T>>;
+
+    private items: T[] = [];
+
+    constructor(private source: IObservableCollection<T>,
+                private condition: (item: T)=>boolean)
+    {
+        source.changed.subscribe(this.onSourceChanged);
+    }
+
+    private onSourceChanged(event: CollectionChange<T>)
+    {
+        var passesFilter = this.condition(event.item);
+
+        switch (event.type)
+        {
+            case CollectionChangeType.Insert:
+            {
+                if (!passesFilter)
+                    return;
+                this.items.push(event.item);
+                this.changed.raise(CollectionChange.insert(event.item, this.items.length - 1));
+                break;
+            }
+            case CollectionChangeType.Remove:
+            {
+                if (!passesFilter)
+                    return;
+                break;
+            }
+            case CollectionChangeType.Move:
+            {
+                console.error("Move not supported");
+                debugger;
+            }
+        }
+    }
+}
+
 export class Grid<TRow>
 {
     private thead: HTMLTableSectionElement;
