@@ -741,16 +741,189 @@ class FilterView<T> implements IDataSource<T>
     }
 }
 
+/// compare: 0 (equal), -1 (a < b), 1 (a > b)
+
+export function findInsertionIndex<T>(items: T[], target: T, sortDirection: SortDirection, comparator: (a:T, b:T)=>number)
+{
+    if (items.length === 0)
+        return 0;
+
+    var minIndex = 0,
+        maxIndex = items.length - 1,
+        sortDir = sortDirection === SortDirection.Ascending ? 1 : -1;;
+
+    while (minIndex < maxIndex)
+    {
+        var index = (minIndex + maxIndex) / 2 | 0;
+        var item = items[index];
+
+        if (item === target)
+        {
+            if (index === 0)
+                return minIndex;
+            if (index === items.length - 1)
+                return items.length - 1;
+
+            var orderedBelow = comparator(items[index - 1], target) * sortDir < 0,
+                orderedAbove = comparator(target, items[index + 1]) * sortDir < 0;
+
+            if (orderedBelow === orderedAbove)
+            {
+                // The target is already correctly ordered
+                return index;
+            }
+
+            if (orderedBelow)
+                minIndex = index + 1;
+            else
+                maxIndex = index - 1;
+
+            continue;
+        }
+
+        var comp = comparator(target, item) * sortDir;
+
+        if (comp === 0)
+            return index;
+
+        if (comp > 0)
+            minIndex = index + 1;
+        else
+            maxIndex = index;
+    }
+
+    if (minIndex === items.length - 1 && comparator(items[items.length - 1], target) * sortDir < 0)
+        return items.length;
+
+    return minIndex;
+}
+
+var compare = (a, b) => a === b ? 0 : a < b ? -1 : 1;
+
+class SortView<T> implements IDataSource<T>
+{
+    public changed: Event<CollectionChange<T>> = new Event<CollectionChange<T>>();
+
+    private items: T[];
+    private sortColumn: IColumn<T>;
+    private sortDirection: SortDirection = SortDirection.Ascending;
+
+    constructor(private source: IDataSource<T>)
+    {
+        source.changed.subscribe(this.onSourceChanged.bind(this));
+
+        this.items = source.getAllItems().slice(); // slice in this form clones the array
+
+        this.setSortColumn(null);
+    }
+
+    public getSortDirection() { return this.sortDirection; }
+
+    public setSortColumn(column: IColumn<T>)
+    {
+        if (column == null)
+        {
+            this.sortColumn = null;
+            this.sortDirection = SortDirection.Ascending;
+            return;
+        }
+
+        // Toggle direction on multiple clicks
+        if (this.sortColumn === column)
+            this.sortDirection = this.sortDirection === SortDirection.Ascending ? SortDirection.Descending : SortDirection.Ascending;
+
+        this.sortColumn = column;
+
+        var dir = this.sortDirection === SortDirection.Ascending ? 1 : -1;
+
+        this.items.sort((a, b) =>
+        {
+            var v1 = column.getSortValue(a);
+            var v2 = column.getSortValue(b);
+            return dir * (v1 < v2 ? -1 : v1 === v2 ? 0 : 1);
+        });
+
+        this.changed.raise(CollectionChange.reset<T>());
+    }
+
+    private onSourceChanged(event: CollectionChange<T>)
+    {
+        switch (event.type)
+        {
+            case CollectionChangeType.Insert:
+            {
+                var insertIndex = this.sortColumn
+                    ? findInsertionIndex(this.items, event.item, this.sortDirection, (a, b) => compare(this.sortColumn.getSortValue(a), this.sortColumn.getSortValue(b)))
+                    : this.items.length;
+                this.items.splice(insertIndex, 0, event.item);
+                this.changed.raise(CollectionChange.insert<T>(event.item, event.itemId, insertIndex));
+                break;
+            }
+            case CollectionChangeType.Remove:
+            {
+                var index = this.items.indexOf(event.item);
+                this.items.splice(index, 1);
+                this.changed.raise(CollectionChange.remove<T>(event.item, event.itemId, index));
+                break;
+            }
+            case CollectionChangeType.Update:
+            {
+                // TODO short circuit if the update doesn't actually change the sort order for this row
+                var oldIndex = this.items.indexOf(event.item);
+                console.assert(oldIndex !== -1, "Updated item should be in items array");
+                var newIndex = this.sortColumn
+                    ? findInsertionIndex(this.items, event.item, this.sortDirection, (a, b) => compare(this.sortColumn.getSortValue(a), this.sortColumn.getSortValue(b)))
+                    : oldIndex;
+
+                if (oldIndex === newIndex)
+                {
+                    this.changed.raise(CollectionChange.update<T>(event.item, event.itemId, index));
+                }
+                else
+                {
+                    // Remove value from current position
+                    var removed = this.items.splice(oldIndex, 1);
+                    console.assert(removed[0] === event.item);
+                    this.items.splice(oldIndex < newIndex ? newIndex - 1 : newIndex, 0, event.item);
+                    this.changed.raise(CollectionChange.move<T>(event.item, event.itemId, newIndex, oldIndex));
+                }
+                break;
+            }
+            case CollectionChangeType.Move:
+            {
+                console.error("Move not supported");
+                debugger;
+                break;
+            }
+            case CollectionChangeType.Reset:
+            {
+                console.error("Reset not supported");
+                debugger;
+                break;
+            }
+        }
+    }
+
+    getAllItems(): T[]
+    {
+        return this.items;
+    }
+
+    getItemId(item: T): string
+    {
+        return this.source.getItemId(item);
+    }
+}
+
 export class Grid<TRow>
 {
     private thead: HTMLTableSectionElement;
     private tbody: HTMLTableSectionElement;
     private headerRow: HTMLTableRowElement;
     private filterRow: HTMLTableRowElement;
-    private rowModelById: {[s:string]: IRowModel<TRow> } = {};
-    private sortColumn: IColumn<TRow>;
-    private sortDirection: SortDirection = SortDirection.Ascending;
+    private rowModelById: {[s:string]: IRowModel<TRow> };
     private filterSource: FilterView<TRow>;
+    private sortSource: SortView<TRow>;
     private source: IDataSource<TRow>;
 
     constructor(source: IDataSource<TRow>, public table: HTMLTableElement, public options: IGridOptions<TRow>)
@@ -800,14 +973,9 @@ export class Grid<TRow>
                         header.classList.remove('sort-descending');
                     }
 
-                    // Determine the direction. Multiple clicks toggle the direction.
-                    var direction = SortDirection.Ascending;
-                    if (this.sortColumn === column && this.sortDirection === SortDirection.Ascending)
-                        direction = SortDirection.Descending;
+                    this.sortSource.setSortColumn(column);
 
-                    //this.sortByColumn(column, direction);
-
-                    th.classList.add(direction === SortDirection.Ascending ? 'sort-descending' : 'sort-ascending');
+                    th.classList.add(this.sortSource.getSortDirection() === SortDirection.Ascending ? 'sort-descending' : 'sort-ascending');
                 });
             }
 
@@ -847,7 +1015,9 @@ export class Grid<TRow>
 
         this.filterSource = new FilterView(source, predicate);
 
-        this.source = this.filterSource;
+        this.sortSource = new SortView(this.filterSource);
+
+        this.source = this.sortSource;
         this.source.changed.subscribe(this.onSourceChanged.bind(this));
 
         this.reset();
@@ -861,7 +1031,7 @@ export class Grid<TRow>
 
         var items = this.source.getAllItems();
         for (var i = 0; i < items.length; i++)
-            this.insertRow(items[i], this.source.getItemId(items[i]));
+            this.insertRow(items[i], this.source.getItemId(items[i]), i);
     }
 
     private updateFilter()
@@ -895,7 +1065,7 @@ export class Grid<TRow>
         {
             case CollectionChangeType.Insert:
             {
-                this.insertRow(event.item, event.itemId);
+                this.insertRow(event.item, event.itemId, event.newIndex);
                 break;
             }
             case CollectionChangeType.Remove:
@@ -930,14 +1100,19 @@ export class Grid<TRow>
         delete this.rowModelById[itemId];
     }
 
-    private insertRow(item: TRow, itemId: string)
+    private insertRow(item: TRow, itemId: string, index: number)
     {
+        console.assert(index >= 0);
         console.assert(typeof(this.rowModelById[itemId]) === 'undefined', "Inserted row should not have a row model");
         var tr = this.createRow();
         var rowModel = {row: item, tr: tr};
         this.rowModelById[itemId] = rowModel;
         this.bindRow(rowModel);
-        this.tbody.appendChild(tr);
+
+        if (index === this.tbody.childElementCount)
+            this.tbody.appendChild(tr);
+        else
+            this.tbody.insertBefore(tr, this.tbody.children[index]);
     }
 
     private updateRow(itemId: string)
@@ -951,6 +1126,8 @@ export class Grid<TRow>
 
     private moveRow(oldIndex: number, newIndex: number)
     {
+        console.assert(oldIndex !== newIndex);
+
         var child = this.tbody.children[oldIndex];
 
         if (newIndex === this.tbody.childElementCount)
@@ -1049,29 +1226,4 @@ export class Grid<TRow>
             }
         }
     }
-
-    //public sortByColumn(column: IColumn<TRow>, direction: SortDirection): void
-    //{
-    //    this.sortColumn = column;
-    //    this.sortDirection = direction;
-    //
-    //    clearChildren(this.tbody);
-    //
-    //    var models: IRowModel<TRow>[] = [];
-    //
-    //    for (var id in this.rowModelById)
-    //        models.push(this.rowModelById[id]);
-    //
-    //    var dir = direction === SortDirection.Ascending ? 1 : -1;
-    //
-    //    models.sort((a, b) =>
-    //    {
-    //        var v1 = column.getSortValue(a.row);
-    //        var v2 = column.getSortValue(b.row);
-    //        return dir * (v1 < v2 ? -1 : v1 === v2 ? 0 : 1);
-    //    });
-    //
-    //    for (var i = 0; i < models.length; i++)
-    //        this.tbody.appendChild(models[i].tr);
-    //}
 }
