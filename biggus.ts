@@ -172,8 +172,10 @@ export class TextColumn<TRow> extends ColumnBase<TRow>
     {
         if (!!text)
         {
+            // TODO do we want to try and escape the regex here? some users will like regex, others will find it surprising
+            var regex = new RegExp(text, "i");
             this.isFiltering = true;
-            this.filterPredicate = (item: TRow) => this.getText(item).indexOf(text) !== -1;
+            this.filterPredicate = (item: TRow) => regex.test(this.getText(item));
         }
         else
         {
