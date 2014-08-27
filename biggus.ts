@@ -371,12 +371,15 @@ export class ActionColumn<TRow> extends ColumnBase<TRow>
 
     public styleCell(td: HTMLTableCellElement, row: TRow)
     {
+        td.classList.add('action');
+
         if (this.options.type === ActionPresentationType.Button)
         {
             var button = document.createElement('button');
             button.className = 'action';
             button.textContent = this.options.text;
             button.addEventListener('click', e => { e.preventDefault(); this.options.action(row); });
+            td.classList.add('button');
             td.appendChild(button);
         }
         else
@@ -386,6 +389,7 @@ export class ActionColumn<TRow> extends ColumnBase<TRow>
             a.href = '#';
             a.textContent = this.options.text;
             a.addEventListener('click', e => { e.preventDefault(); this.options.action(row); });
+            td.classList.add('link');
             td.appendChild(a);
         }
 
