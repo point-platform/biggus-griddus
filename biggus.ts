@@ -601,6 +601,13 @@ export class DataSource<T> implements IDataSource<T>
         this.changed.raise(change);
     }
 
+    public addRange(items: T[])
+    {
+        // TODO potentially better to add everything, then raise 'reset' here
+        for (var i = 0; i < items.length; i++)
+            this.add(items[i]);
+    }
+
     public get(index: number)
     {
         return this.items[index];
