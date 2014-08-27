@@ -627,12 +627,12 @@ export class DataSource<T> implements IDataSource<T>
         return this.items[index];
     }
 
-    getAllItems(): T[]
+    public getAllItems(): T[]
     {
         return this.items;
     }
 
-    getItemId(item: T): string
+    public getItemId(item: T): string
     {
         return this.itemIdAccessor(item);
     }
@@ -751,12 +751,12 @@ class FilterView<T> implements IDataSource<T>
         this.changed.raise(CollectionChange.remove(item, itemId, index));
     }
 
-    getAllItems(): T[]
+    public getAllItems(): T[]
     {
         return this.items;
     }
 
-    getItemId(item: T): string
+    public getItemId(item: T): string
     {
         return this.source.getItemId(item);
     }
@@ -925,12 +925,12 @@ class SortView<T> implements IDataSource<T>
         }
     }
 
-    getAllItems(): T[]
+    public getAllItems(): T[]
     {
         return this.items;
     }
 
-    getItemId(item: T): string
+    public getItemId(item: T): string
     {
         return this.source.getItemId(item);
     }
