@@ -38,10 +38,14 @@ Install the Karma command line runner via:
 
     $ sudo npm install -g karma-cli
 
-In the project folder, load the npm modules:
+In the project folder, load the `npm` modules:
 
     $ npm update
 
 Start the unit test runner from the command line via:
 
-    $ karma start karma.conf.js
+    $ karma start
+
+To run the unit tests once:
+
+    $ npm test
