@@ -836,9 +836,9 @@ class SortView<T> implements IDataSource<T>
     constructor(private source: IDataSource<T>)
     {
         this.getItemId = source.getItemId;
-        source.changed.subscribe(this.onSourceChanged.bind(this));
-
         this.items = source.getAllItems().slice(); // slice in this form clones the array
+
+        source.changed.subscribe(this.onSourceChanged.bind(this));
 
         this.setSortColumn(null);
     }
