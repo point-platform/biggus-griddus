@@ -902,7 +902,7 @@ class SortView<T> implements IDataSource<T>
 
                 if (oldIndex === newIndex)
                 {
-                    this.changed.raise(CollectionChange.update<T>(event.item, event.itemId, index));
+                    this.changed.raise(CollectionChange.update<T>(event.item, event.itemId, oldIndex));
                 }
                 else
                 {
