@@ -1,0 +1,39 @@
+{
+  "name": "biggus-griddus",
+  "version": "0.1.0",
+  "description": "A data table solution for the browser, supporting filtering, sorting and scrolling through very large data sets.",
+  "main": "biggus.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/drewnoakes/biggus-griddus.git"
+  },
+  "keywords": [
+    "data",
+    "table",
+    "grid",
+    "typescript",
+    "datatable",
+    "datagrid",
+    "data",
+    "grid"
+  ],
+  "author": "Drew Noakes",
+  "license": "LGPL v3",
+  "bugs": {
+    "url": "https://github.com/drewnoakes/biggus-griddus/issues"
+  },
+  "homepage": "https://github.com/drewnoakes/biggus-griddus",
+  "devDependencies": {
+    "karma": "^0.12.22",
+    "karma-chrome-launcher": "^0.1.4",
+    "karma-jasmine": "^0.1.5",
+    "karma-requirejs": "^0.2.2",
+    "requirejs": "^2.1.14"
+  }
+}
