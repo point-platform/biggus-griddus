@@ -1,7 +1,7 @@
-node_modules
-.idea
-biggus.js
-biggus.js.map
-test/*.js
-test/*.js.map
+/node_modules/
+/.idea
+/biggus.js
+/biggus.js.map
+/test/*.js
+/test/*.js.map
 
