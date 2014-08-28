@@ -1161,46 +1161,6 @@ export class Grid<TRow>
             this.tbody.insertBefore(child, this.tbody.children[newIndex]);
     }
 
-    ///** Insert or update the provided row in the table. */
-    //private setRow(row: TRow): void
-    //{
-    //    var rowId = this.options.rowDataId(row);
-    //
-    //    var rowModel = this.rowModelById[rowId];
-    //
-    //    if (typeof(rowModel) !== "undefined")
-    //    {
-    //        // row previously known
-    //        rowModel.row = row;
-    //
-    //        var tr = rowModel.tr;
-    //
-    //        this.clearRow(tr);
-    //        this.bindRow(rowModel);
-    //        this.flashRow(tr);
-    //    }
-    //    else
-    //    {
-    //        // row unknown
-    //        var tr = this.createRow();
-    //        rowModel = {row: row, tr: tr};
-    //        this.rowModelById[rowId] = rowModel;
-    //        this.bindRow(rowModel);
-    //        this.tbody.appendChild(tr);
-    //
-    //        var notifyRow = (<INotifyChange<TRow>><any>row);
-    //
-    //        if (notifyRow.subscribeChange)
-    //        {
-    //            notifyRow.subscribeChange(_ =>
-    //            {
-    //                this.clearRow(tr);
-    //                this.bindRow(rowModel)
-    //            });
-    //        }
-    //    }
-    //}
-
     private flashRow(tr: HTMLTableRowElement)
     {
         // Flash the row that changed
