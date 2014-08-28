@@ -649,7 +649,7 @@ class FilterView<T> implements IDataSource<T>
     private predicate: (item: T)=>boolean;
 
     constructor(private source: IDataSource<T>,
-                predicate: (item: T)=>boolean)
+                predicate?: (item: T)=>boolean)
     {
         this.getItemId = source.getItemId;
         source.changed.subscribe(this.onSourceChanged.bind(this));
