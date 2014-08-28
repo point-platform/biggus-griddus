@@ -405,6 +405,12 @@ export class ActionColumn<TRow> extends ColumnBase<TRow>
 
         super.styleCell(td, row);
     }
+
+    public styleHeader(th: HTMLTableHeaderCellElement)
+    {
+        th.classList.add('action');
+        th.classList.add(this.options.type === ActionPresentationType.Button ? 'button' : 'link');
+    }
 }
 
 export interface IGridOptions<TRow>
