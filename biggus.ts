@@ -941,6 +941,231 @@ class SortView<T> implements IDataSource<T>
     }
 }
 
+class WindowView<T> implements IDataSource<T>
+{
+    public changed: Event<CollectionChange<T>> = new Event<CollectionChange<T>>();
+
+    private windowSize: number;
+    private offset: number;
+
+    constructor(private source: IDataSource<T>, windowSize: number)
+    {
+        this.getItemId = source.getItemId;
+        this.offset = 0;
+
+        source.changed.subscribe(this.onSourceChanged.bind(this));
+        this.setWindowSize(windowSize);
+    }
+
+    private toWindowIndex(index: number)
+    {
+        return index - this.offset;
+    }
+
+    private onSourceChanged(event: CollectionChange<T>)
+    {
+        switch (event.type)
+        {
+            case CollectionChangeType.Insert:
+            {
+                var windowIndex = this.toWindowIndex(event.newIndex);
+                if (this.isValidWindowIndex(windowIndex))
+                    this.insert(event.item, event.itemId, windowIndex);
+                else if (windowIndex < 0)
+                    this.offset++;
+                break;
+            }
+            case CollectionChangeType.Remove:
+            {
+                var windowIndex = this.toWindowIndex(event.oldIndex);
+                if (this.isValidWindowIndex(windowIndex))
+                    this.remove(event.item, event.itemId, windowIndex);
+                else if (windowIndex < 0)
+                    this.offset--;
+                break;
+            }
+            case CollectionChangeType.Update:
+            {
+                var index = this.toWindowIndex(event.newIndex);
+                if (this.isValidWindowIndex(index))
+                    this.changed.raise(CollectionChange.update(event.item, event.itemId, event.newIndex - this.offset));
+                break;
+            }
+            case CollectionChangeType.Move:
+            {
+                var oldWIndex = this.toWindowIndex(event.oldIndex);
+                var newWIndex = this.toWindowIndex(event.newIndex);
+
+                var isOldIn = this.isValidWindowIndex(oldWIndex);
+                var isNewIn = this.isValidWindowIndex(newWIndex);
+
+                if (!isOldIn && !isNewIn)
+                    break;
+
+                if (isOldIn && isNewIn)
+                {
+                    this.changed.raise(CollectionChange.move(event.item, event.itemId, newWIndex, oldWIndex));
+                }
+                else if (isOldIn)
+                {
+                    // Was in the window, but not anymore
+                    this.remove(event.item, event.itemId, oldWIndex);
+                }
+                else
+                {
+                    // Was not in the window before, but is now
+                    this.insert(event.item, event.itemId, newWIndex);
+                }
+
+                break;
+            }
+            case CollectionChangeType.Reset:
+            {
+                this.changed.raise(event);
+                break;
+            }
+        }
+    }
+
+    private remove(item: T, itemId: string, windowIndex: number)
+    {
+        this.changed.raise(CollectionChange.remove(item, itemId, windowIndex));
+
+        // If enough items exist after the window, slurp one in
+        var sourceItems = this.source.getAllItems();
+
+        if (this.offset + this.windowSize < sourceItems.length)
+        {
+            var appendItem = sourceItems[this.offset + this.windowSize - 1];
+            this.changed.raise(CollectionChange.insert(appendItem, this.getItemId(appendItem), this.windowSize - 1));
+        }
+    }
+
+    private insert(item: T, itemId: string, windowIndex: number)
+    {
+        this.changed.raise(CollectionChange.insert(item, itemId, windowIndex));
+
+        // If we have too many items, remove one from the end
+        if (this.offset + this.windowSize < this.source.getAllItems().length)
+            this.changed.raise(CollectionChange.remove(item, itemId, this.windowSize));
+    }
+
+    private isValidWindowIndex(windowIndex: number)
+    {
+        return windowIndex >= 0 && windowIndex < this.windowSize;
+    }
+
+    public setWindowOffset(offset: number)
+    {
+        if (this.offset === offset)
+            return;
+        if (offset < 0)
+            throw new Error("Window offset cannot be negative.");
+
+        var oldOffset = this.offset;
+        this.offset = offset;
+
+        var diff = offset - oldOffset;
+        var items = this.source.getAllItems();
+
+        if (Math.abs(diff) > this.windowSize)
+        {
+            this.changed.raise(CollectionChange.reset<T>());
+        }
+        else if (diff > 0)
+        {
+            // Scrolling 'down'.
+            // Remove from top
+            for (var i = 0; i < diff; i++)
+            {
+                var sourceIndex = oldOffset + i;
+                if (sourceIndex < 0 || sourceIndex >= items.length)
+                    continue;
+                var item = items[sourceIndex];
+                this.changed.raise(CollectionChange.remove(item, this.getItemId(item), 0));
+            }
+            // Introduce at bottom (if available)
+            for (var i = 0; i < diff; i++)
+            {
+                var sourceIndex = oldOffset + this.windowSize + i;
+                if (sourceIndex < 0 || sourceIndex >= items.length)
+                    continue;
+                var item = items[sourceIndex];
+                this.changed.raise(CollectionChange.insert(item, this.getItemId(item), this.windowSize - diff + i));
+            }
+        }
+        else
+        {
+            // Scrolling 'up'.
+            diff = -diff;
+            // Introduce at top
+            for (var i = diff - 1; i >= 0; i--)
+            {
+                var sourceIndex = this.offset + i;
+                if (sourceIndex < 0 || sourceIndex >= items.length)
+                    continue;
+                var item = items[sourceIndex];
+                this.changed.raise(CollectionChange.insert(item, this.getItemId(item), 0));
+            }
+            // Remove from bottom
+            for (var i = 0; i < diff; i++)
+            {
+                var sourceIndex = this.offset + this.windowSize + i;
+                if (sourceIndex < 0 || sourceIndex >= items.length)
+                    continue;
+                var item = items[sourceIndex];
+                this.changed.raise(CollectionChange.remove(item, this.getItemId(item), this.windowSize));
+            }
+        }
+    }
+
+    public setWindowSize(size: number)
+    {
+        if (this.windowSize === size)
+            return;
+        if (size < 0)
+            throw new Error("Window size cannot be negative.");
+
+        var oldSize = this.windowSize;
+        this.windowSize = size;
+
+        var items = this.source.getAllItems();
+
+        if (oldSize < size)
+        {
+            for (var i = oldSize; i < size; i++)
+            {
+                var sourceIndex = i + this.offset;
+                if (sourceIndex < 0 || sourceIndex >= items.length)
+                    continue;
+                var item = items[sourceIndex];
+                this.changed.raise(CollectionChange.insert(item, this.getItemId(item), i));
+            }
+        }
+        else
+        {
+            for (var i = oldSize - 1; i >= size; i--)
+            {
+                var sourceIndex = i + this.offset;
+                if (sourceIndex < 0 || sourceIndex >= items.length)
+                    continue;
+                var item = items[sourceIndex];
+                this.changed.raise(CollectionChange.remove(item, this.getItemId(item), i));
+            }
+        }
+    }
+
+    public getAllItems(): T[]
+    {
+        return this.source.getAllItems().slice(this.offset, this.offset + this.windowSize);
+    }
+
+    public getItemId(item: T): string
+    {
+        throw new Error("Should be replaced in constructor");
+    }
+}
+
 export class Grid<TRow>
 {
     private thead: HTMLTableSectionElement;
@@ -950,6 +1175,7 @@ export class Grid<TRow>
     private rowModelById: {[s:string]: IRowModel<TRow> };
     private filterSource: FilterView<TRow>;
     private sortSource: SortView<TRow>;
+    private windowSource: WindowView<TRow>;
     private source: IDataSource<TRow>;
 
     constructor(source: IDataSource<TRow>, public table: HTMLTableElement, public options: IGridOptions<TRow>)
@@ -1040,10 +1266,22 @@ export class Grid<TRow>
 
         this.sortSource = new SortView(this.filterSource);
 
-        this.source = this.sortSource;
+        this.windowSource = new WindowView(this.sortSource, 4);
+
+        this.source = this.windowSource;
         this.source.changed.subscribe(this.onSourceChanged.bind(this));
 
         this.reset();
+    }
+
+    public setWindowSize(size: number)
+    {
+        this.windowSource.setWindowSize(size);
+    }
+
+    public setWindowOffset(offset: number)
+    {
+        this.windowSource.setWindowOffset(offset);
     }
 
     private reset()
