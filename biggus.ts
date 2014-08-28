@@ -1035,10 +1035,7 @@ export class Grid<TRow>
         for (var c = 0; c < this.options.columns.length; c++)
             initialiseColumn(this.options.columns[c]);
 
-        // TODO allow modifying the predicate
-        var predicate = item => source.getItemId(item).indexOf("1") !== -1;
-
-        this.filterSource = new FilterView(source, predicate);
+        this.filterSource = new FilterView(source, null);
 
         this.sortSource = new SortView(this.filterSource);
 
