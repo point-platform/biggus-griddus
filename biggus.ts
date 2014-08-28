@@ -646,14 +646,15 @@ class FilterView<T> implements IDataSource<T>
 
     private items: T[] = [];
     private itemFilterState: {[itemId: string]:boolean} = {};
+    private predicate: (item: T)=>boolean;
 
     constructor(private source: IDataSource<T>,
-                private predicate: (item: T)=>boolean)
+                predicate: (item: T)=>boolean)
     {
         this.getItemId = source.getItemId;
         source.changed.subscribe(this.onSourceChanged.bind(this));
 
-        this.setPredicate(null);
+        this.setPredicate(predicate);
     }
 
     private onSourceChanged(event: CollectionChange<T>)
