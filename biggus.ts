@@ -594,6 +594,8 @@ export class DataSource<T> implements IDataSource<T>
 
     constructor(private itemIdAccessor: (item: T)=>string, items?: T[])
     {
+        this.getItemId = this.getItemId.bind(this);
+
         for (var i = 0; items && i < items.length; i++) {
             this.add(items[i]);
         }
@@ -648,6 +650,7 @@ class FilterView<T> implements IDataSource<T>
     constructor(private source: IDataSource<T>,
                 private predicate: (item: T)=>boolean)
     {
+        this.getItemId = source.getItemId;
         source.changed.subscribe(this.onSourceChanged.bind(this));
 
         this.setPredicate(null);
@@ -758,7 +761,7 @@ class FilterView<T> implements IDataSource<T>
 
     public getItemId(item: T): string
     {
-        return this.source.getItemId(item);
+        throw new Error("Should be replaced in constructor");
     }
 }
 
@@ -831,6 +834,7 @@ class SortView<T> implements IDataSource<T>
 
     constructor(private source: IDataSource<T>)
     {
+        this.getItemId = source.getItemId;
         source.changed.subscribe(this.onSourceChanged.bind(this));
 
         this.items = source.getAllItems().slice(); // slice in this form clones the array
@@ -932,7 +936,7 @@ class SortView<T> implements IDataSource<T>
 
     public getItemId(item: T): string
     {
-        return this.source.getItemId(item);
+        throw new Error("Should be replaced in constructor");
     }
 }
 
