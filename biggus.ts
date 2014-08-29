@@ -646,7 +646,7 @@ export class DataSource<T> implements IDataSource<T>
     }
 }
 
-class FilterView<T> implements IDataSource<T>
+export class FilterView<T> implements IDataSource<T>
 {
     public changed: Event<CollectionChange<T>> = new Event<CollectionChange<T>>();
 
