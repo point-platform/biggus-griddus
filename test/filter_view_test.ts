@@ -13,67 +13,66 @@ describe("filter view", () =>
     it("appends correctly when no predicate specified", () =>
     {
         var source = new biggus.DataSource<string>(i => i);
-        var events: biggus.CollectionChange<string>[] = [];
         var filterView = new biggus.FilterView<string>(source);
 
-        filterView.changed.subscribe(e => events.push(e));
-
-        source.add("A");
-        source.add("B");
-        source.add("C");
-        source.add("D");
-        source.add("E");
-        source.add("F");
-
-        expect(events.length).toEqual(6);
-
-        for (var i = 0; i < events.length; i++)
+        filterView.changed.collect(events =>
         {
-            expect(events[i].type).toEqual(biggus.CollectionChangeType.Insert);
-            expect(events[i].itemId).toEqual(events[i].item);
-            expect(events[i].newIndex).toEqual(i);
-        }
+            source.add("A");
+            source.add("B");
+            source.add("C");
+            source.add("D");
+            source.add("E");
+            source.add("F");
 
-        expect(filterView.getAllItems()).toEqual(["A","B","C","D","E","F"]);
+            expect(events.length).toEqual(6);
+
+            for (var i = 0; i < events.length; i++)
+            {
+                expect(events[i].type).toEqual(biggus.CollectionChangeType.Insert);
+                expect(events[i].itemId).toEqual(events[i].item);
+                expect(events[i].newIndex).toEqual(i);
+            }
+
+            expect(filterView.getAllItems()).toEqual(["A","B","C","D","E","F"]);
+        });
     });
 
     it("appends correctly when no predicate specified", () =>
     {
         var source = new biggus.DataSource<string>(i => i);
-        var events: biggus.CollectionChange<string>[] = [];
         var filterView = new biggus.FilterView<string>(source);
 
-        filterView.changed.subscribe(e => events.push(e));
+        filterView.changed.collect(events =>
+        {
+            source.add("A");
+            source.add("BB");
+            source.add("CCC");
+            source.add("D");
+            source.add("EE");
+            source.add("FFF");
 
-        source.add("A");
-        source.add("BB");
-        source.add("CCC");
-        source.add("D");
-        source.add("EE");
-        source.add("FFF");
+            expect(events.length).toEqual(6);
 
-        expect(events.length).toEqual(6);
+            events.splice(0);
 
-        events.splice(0);
+            expect(events.length).toEqual(0);
 
-        expect(events.length).toEqual(0);
+            filterView.setPredicate(s => s.length < 3);
 
-        filterView.setPredicate(s => s.length < 3);
+            expect(events.length).toEqual(2);
 
-        expect(events.length).toEqual(2);
+            expect(events[0].oldIndex).toEqual(2);
+            expect(events[1].oldIndex).toEqual(4);
+            expect(events[0].item).toEqual("CCC");
+            expect(events[1].item).toEqual("FFF");
 
-        expect(events[0].oldIndex).toEqual(2);
-        expect(events[1].oldIndex).toEqual(4);
-        expect(events[0].item).toEqual("CCC");
-        expect(events[1].item).toEqual("FFF");
-
-        expect(filterView.getAllItems()).toEqual(["A","BB","D","EE"]);
+            expect(filterView.getAllItems()).toEqual(["A", "BB", "D", "EE"]);
+        });
     });
 
     it("reinserts items when filter removed", () =>
     {
         var source = new biggus.DataSource<string>(i => i);
-        var events: biggus.CollectionChange<string>[] = [];
         var filterView = new biggus.FilterView<string>(source);
 
         filterView.setPredicate(s => s.length < 3);
@@ -87,15 +86,16 @@ describe("filter view", () =>
 
         expect(filterView.getAllItems().length).toEqual(4);
 
-        filterView.changed.subscribe(e => events.push(e));
+        filterView.changed.collect(events =>
+        {
+            filterView.setPredicate(null);
 
-        filterView.setPredicate(null);
+            expect(events.length).toEqual(2);
 
-        expect(events.length).toEqual(2);
-
-        expect(events[0].newIndex).toEqual(4);
-        expect(events[1].newIndex).toEqual(5);
-        expect(events[0].item).toEqual("CCC");
-        expect(events[1].item).toEqual("FFF");
+            expect(events[0].newIndex).toEqual(4);
+            expect(events[1].newIndex).toEqual(5);
+            expect(events[0].item).toEqual("CCC");
+            expect(events[1].item).toEqual("FFF");
+        });
     });
 });
