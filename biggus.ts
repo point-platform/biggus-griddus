@@ -957,7 +957,7 @@ export class SortView<T> implements IDataSource<T>
     }
 }
 
-class WindowView<T> implements IDataSource<T>
+export class WindowView<T> implements IDataSource<T>
 {
     public changed: Event<CollectionChange<T>> = new Event<CollectionChange<T>>();
 
@@ -972,6 +972,9 @@ class WindowView<T> implements IDataSource<T>
         source.changed.subscribe(this.onSourceChanged.bind(this));
         this.setWindowSize(windowSize);
     }
+
+    public getWindowSize() { return this.windowSize; }
+    public getWindowOffset() { return this.offset; }
 
     private toWindowIndex(index: number)
     {
