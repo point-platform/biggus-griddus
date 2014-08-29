@@ -448,6 +448,16 @@ export class Event<T>
         for (var i = 0; i < this.callbacks.length; i++)
             this.callbacks[i](item);
     }
+
+    public getSubscriberCount() { return this.callbacks.length; }
+
+    public collect(handler: (args:T[])=>void)
+    {
+        var args: T[] = [];
+        var cancelSubscription = this.subscribe(a => args.push(a));
+        handler(args);
+        cancelSubscription();
+    }
 }
 
 export function clearChildren(el: Element)

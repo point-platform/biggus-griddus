@@ -58,4 +58,28 @@ describe("event", () =>
 
         expect(callbackItems).toEqual([100]);
     });
+
+    it("allows test code to collect events within some scope", () =>
+    {
+        event = new biggus.Event<number>();
+
+        expect(event.getSubscriberCount()).toEqual(0);
+
+        event.collect(events =>
+        {
+            expect(event.getSubscriberCount()).toEqual(1);
+
+            expect(events).toEqual([]);
+
+            event.raise(100);
+
+            expect(events).toEqual([100]);
+
+            event.raise(200);
+
+            expect(events).toEqual([100,200]);
+        });
+
+        expect(event.getSubscriberCount()).toEqual(0);
+    });
 });
