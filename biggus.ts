@@ -831,7 +831,7 @@ export function findInsertionIndex<T>(items: T[], target: T, sortDirection: Sort
 
 var compare = (a, b) => a === b ? 0 : a < b ? -1 : 1;
 
-class SortView<T> implements IDataSource<T>
+export class SortView<T> implements IDataSource<T>
 {
     public changed: Event<CollectionChange<T>> = new Event<CollectionChange<T>>();
 
