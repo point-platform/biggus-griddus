@@ -640,6 +640,12 @@ export class DataSource<T> implements IDataSource<T>
             this.add(items[i]);
     }
 
+    public removeAt(index: number)
+    {
+        var removed = this.items.splice(index, 1)[0];
+        this.changed.raise(CollectionChange.remove(removed, this.getItemId(removed), index));
+    }
+
     public get(index: number)
     {
         return this.items[index];
