@@ -608,9 +608,9 @@ export class DataSource<T> implements IDataSource<T>
 
     private items: T[] = [];
 
-    constructor(private itemIdAccessor: (item: T)=>string, items?: T[])
+    constructor(itemIdAccessor: (item: T)=>string, items?: T[])
     {
-        this.getItemId = this.getItemId.bind(this);
+        this.getItemId = itemIdAccessor.bind(this);
 
         for (var i = 0; items && i < items.length; i++) {
             this.add(items[i]);
@@ -619,7 +619,7 @@ export class DataSource<T> implements IDataSource<T>
 
     public add(item: T)
     {
-        var itemId = this.itemIdAccessor(item);
+        var itemId = this.getItemId(item);
         var notifyItem: INotifyChange<T> = <any>item;
         if (notifyItem.subscribeChange && typeof(notifyItem.subscribeChange) === 'function') {
             notifyItem.subscribeChange(changedItem => {
@@ -652,7 +652,7 @@ export class DataSource<T> implements IDataSource<T>
 
     public getItemId(item: T): string
     {
-        return this.itemIdAccessor(item);
+        throw new Error("Should be rebound in constructor.");
     }
 }
 
