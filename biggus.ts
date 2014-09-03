@@ -931,7 +931,12 @@ export class SortView<T> implements IDataSource<T>
                     ? findInsertionIndex(this.items, event.item, this.sortDirection, (a, b) => compare(this.sortColumn.getSortValue(a), this.sortColumn.getSortValue(b)))
                     : oldIndex;
 
-                if (oldIndex === newIndex)
+                console.assert(newIndex >= 0);
+                console.assert(newIndex <= this.items.length);
+
+                var adjustedNewIndex = oldIndex < newIndex ? newIndex - 1 : newIndex;
+
+                if (oldIndex === adjustedNewIndex)
                 {
                     // short circuit if the update doesn't actually change the sort order for this row
                     this.changed.raise(CollectionChange.update<T>(event.item, event.itemId, oldIndex));
@@ -941,8 +946,8 @@ export class SortView<T> implements IDataSource<T>
                     // Remove value from current position
                     var removed = this.items.splice(oldIndex, 1);
                     console.assert(removed[0] === event.item);
-                    this.items.splice(oldIndex < newIndex ? newIndex - 1 : newIndex, 0, event.item);
-                    this.changed.raise(CollectionChange.move<T>(event.item, event.itemId, newIndex, oldIndex));
+                    this.items.splice(adjustedNewIndex, 0, event.item);
+                    this.changed.raise(CollectionChange.move<T>(event.item, event.itemId, adjustedNewIndex, oldIndex));
                 }
                 break;
             }
