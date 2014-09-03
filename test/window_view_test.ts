@@ -194,6 +194,7 @@ describe("window view", () =>
             windowView.setWindowSize(3);
             source.addRange(sourceItems);
 
+            expect(source.getAllItems()).toEqual(["A", "B", "C", "D", "E", "F"]);
             expect(windowView.getAllItems()).toEqual(["C", "D", "E"]);
         });
 
@@ -203,7 +204,40 @@ describe("window view", () =>
             {
                 source.move(2, 4);
 
+                expect(source.getAllItems()).toEqual(["A", "B", "D", "E", "C", "F"]);
+                expect(windowView.getAllItems()).toEqual(["D", "E", "C"]);
+
                 expect(events).toEqual([biggus.CollectionChange.move("C", "C", 2, 0)]);
+            });
+        });
+
+        it("before window to after window", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                source.move(0, 5);
+
+                expect(source.getAllItems()).toEqual(["B", "C", "D", "E", "F", "A"]);
+                expect(windowView.getAllItems()).toEqual(["D", "E", "F"]);
+
+                expect(events.length).toEqual(2);
+                expect(events[0]).toEqual(biggus.CollectionChange.remove("C", "C", 0));
+                expect(events[1]).toEqual(biggus.CollectionChange.insert("F", "F", 2));
+            });
+        });
+
+        it("after window to before window", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                source.move(5, 0);
+
+                expect(source.getAllItems()).toEqual(["F", "A", "B", "C", "D", "E"]);
+                expect(windowView.getAllItems()).toEqual(["B", "C", "D"]);
+
+                expect(events.length).toEqual(2);
+                expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
+                expect(events[1]).toEqual(biggus.CollectionChange.insert("B", "B", 0));
             });
         });
 
@@ -232,18 +266,33 @@ describe("window view", () =>
             });
         });
 
-        it("into window from before window", () =>
+        it("into window (top) from before window", () =>
         {
             windowView.changed.collect(events =>
             {
                 source.move(0, 2);
 
                 expect(source.getAllItems()).toEqual(["B", "C", "A", "D", "E", "F"]);
-                expect(windowView.getAllItems()).toEqual(["A", "C", "D"]);
+                expect(windowView.getAllItems()).toEqual(["A", "D", "E"]);
 
                 expect(events.length).toEqual(2);
-                expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
+                expect(events[0]).toEqual(biggus.CollectionChange.remove("C", "C", 0));
                 expect(events[1]).toEqual(biggus.CollectionChange.insert("A", "A", 0));
+            });
+        });
+
+        it("into window (mid) from before window", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                source.move(0, 3);
+
+                expect(source.getAllItems()).toEqual(["B", "C", "D", "A", "E", "F"]);
+                expect(windowView.getAllItems()).toEqual(["D", "A", "E"]);
+
+                expect(events.length).toEqual(2);
+                expect(events[0]).toEqual(biggus.CollectionChange.remove("C", "C", 0));
+                expect(events[1]).toEqual(biggus.CollectionChange.insert("A", "A", 1));
             });
         });
 
