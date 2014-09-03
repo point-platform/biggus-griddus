@@ -201,7 +201,7 @@ describe("window view", () =>
         {
             windowView.changed.collect(events =>
             {
-                source.changed.raise(biggus.CollectionChange.move("C", "C", 4, 2));
+                source.move(2, 4);
 
                 expect(events).toEqual([biggus.CollectionChange.move("C", "C", 2, 0)]);
             });
@@ -211,7 +211,7 @@ describe("window view", () =>
         {
             windowView.changed.collect(events =>
             {
-                source.changed.raise(biggus.CollectionChange.move("E", "E", 2, 4));
+                source.move(4, 2);
 
                 expect(events).toEqual([biggus.CollectionChange.move("E", "E", 0, 2)]);
             });
@@ -221,7 +221,7 @@ describe("window view", () =>
         {
             windowView.changed.collect(events =>
             {
-                source.changed.raise(biggus.CollectionChange.move("F", "F", 2, 5));
+                source.move(5, 2);
 
                 expect(events.length).toEqual(2);
                 expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
@@ -233,7 +233,7 @@ describe("window view", () =>
         {
             windowView.changed.collect(events =>
             {
-                source.changed.raise(biggus.CollectionChange.move("A", "A", 2, 0));
+                source.move(0, 2);
 
                 expect(events.length).toEqual(2);
                 expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
@@ -245,7 +245,7 @@ describe("window view", () =>
         {
             windowView.changed.collect(events =>
             {
-                source.changed.raise(biggus.CollectionChange.move("D", "D", 1, 3));
+                source.move(3, 1);
 
                 expect(events.length).toEqual(2);
                 expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
@@ -257,7 +257,7 @@ describe("window view", () =>
         {
             windowView.changed.collect(events =>
             {
-                source.changed.raise(biggus.CollectionChange.move("D", "D", 5, 3));
+                source.move(3, 5);
 
                 expect(events.length).toEqual(2);
                 expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
