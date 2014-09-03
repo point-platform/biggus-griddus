@@ -925,7 +925,6 @@ export class SortView<T> implements IDataSource<T>
             }
             case CollectionChangeType.Update:
             {
-                // TODO short circuit if the update doesn't actually change the sort order for this row
                 var oldIndex = this.items.indexOf(event.item);
                 console.assert(oldIndex !== -1, "Updated item should be in items array");
                 var newIndex = this.sortColumn
@@ -934,6 +933,7 @@ export class SortView<T> implements IDataSource<T>
 
                 if (oldIndex === newIndex)
                 {
+                    // short circuit if the update doesn't actually change the sort order for this row
                     this.changed.raise(CollectionChange.update<T>(event.item, event.itemId, oldIndex));
                 }
                 else
