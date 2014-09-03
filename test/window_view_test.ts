@@ -211,6 +211,16 @@ describe("window view", () =>
             });
         });
 
+        it("backward within window", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                source.move(4, 2);
+
+                expect(events).toEqual([biggus.CollectionChange.move("E", "E", 0, 2)]);
+            });
+        });
+
         it("before window to after window", () =>
         {
             windowView.changed.collect(events =>
@@ -238,16 +248,6 @@ describe("window view", () =>
                 expect(events.length).toEqual(2);
                 expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
                 expect(events[1]).toEqual(biggus.CollectionChange.insert("B", "B", 0));
-            });
-        });
-
-        it("backward within window", () =>
-        {
-            windowView.changed.collect(events =>
-            {
-                source.move(4, 2);
-
-                expect(events).toEqual([biggus.CollectionChange.move("E", "E", 0, 2)]);
             });
         });
 
