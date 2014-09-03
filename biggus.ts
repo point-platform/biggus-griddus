@@ -1028,25 +1028,104 @@ export class WindowView<T> implements IDataSource<T>
                 var oldWIndex = this.toWindowIndex(event.oldIndex);
                 var newWIndex = this.toWindowIndex(event.newIndex);
 
-                var isOldIn = this.isValidWindowIndex(oldWIndex);
-                var isNewIn = this.isValidWindowIndex(newWIndex);
+                var wasBefore = oldWIndex < 0,
+                    isBefore = newWIndex < 0,
+                    wasAfter = oldWIndex >= this.windowSize,
+                    isAfter = newWIndex >= this.windowSize,
+                    wasIn = !wasBefore && !wasAfter,
+                    isIn = !isBefore && !isAfter;
 
-                if (!isOldIn && !isNewIn)
+                if ((wasBefore && isBefore) || (wasAfter && isAfter))
                     break;
 
-                if (isOldIn && isNewIn)
+                if (wasIn && isIn)
                 {
+                    // Move within the window
                     this.changed.raise(CollectionChange.move(event.item, event.itemId, newWIndex, oldWIndex));
+                    break;
                 }
-                else if (isOldIn)
+
+                if (wasBefore && isAfter)
                 {
-                    // Was in the window, but not anymore
-                    this.remove(event.item, event.itemId, oldWIndex);
+                    // before -> after -- pull everything up one
+                    // TODO would benefit from this.source.getItemAt(index) here
+                    var sourceItems = this.source.getAllItems();
+                    var removeItem = sourceItems[this.offset - 1];
+                    var insertItem = sourceItems[this.offset + this.windowSize - 1];
+                    this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), 0));
+                    this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), this.windowSize - 1));
+                }
+                else if (wasAfter && isBefore)
+                {
+                    // after -> before -- push everything down one
+                    // TODO would benefit from this.source.getItemAt(index) here
+                    var sourceItems = this.source.getAllItems();
+                    var removeItem = sourceItems[this.offset + this.windowSize];
+                    var insertItem = sourceItems[this.offset];
+                    this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), this.windowSize - 1));
+                    this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), 0));
+                }
+                else if (wasIn)
+                {
+                    // inside -> outside
+
+                    console.assert(!isIn);
+
+                    if (isBefore)
+                    {
+                        // inside -> before
+
+                        // TODO would benefit from this.source.getItemAt(index) here
+                        var sourceItems = this.source.getAllItems();
+                        var removeItem = sourceItems[event.newIndex];
+                        var insertItem = sourceItems[this.offset];
+                        this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), oldWIndex));
+                        this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), 0));
+                    }
+                    else
+                    {
+                        // inside -> after
+
+                        console.assert(isAfter);
+
+                        // TODO would benefit from this.source.getItemAt(index) here
+                        var sourceItems = this.source.getAllItems();
+                        var removeItem = sourceItems[event.newIndex];
+                        var insertItem = sourceItems[this.offset + this.windowSize - 1];
+                        this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), oldWIndex));
+                        this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), this.windowSize - 1));
+                    }
                 }
                 else
                 {
-                    // Was not in the window before, but is now
-                    this.insert(event.item, event.itemId, newWIndex);
+                    // outside -> inside
+
+                    console.assert(!wasIn && isIn);
+
+                    if (wasBefore)
+                    {
+                        // before -> inside
+
+                        // TODO would benefit from this.source.getItemAt(index) here
+                        var sourceItems = this.source.getAllItems();
+                        var removeItem = sourceItems[this.offset - 1];
+                        var insertItem = sourceItems[event.newIndex];
+                        this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), 0));
+                        this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), newWIndex));
+                    }
+                    else
+                    {
+                        // after -> inside
+
+                        console.assert(wasAfter);
+
+                        // TODO would benefit from this.source.getItemAt(index) here
+                        var sourceItems = this.source.getAllItems();
+                        var removeItem = sourceItems[this.offset + this.windowSize];
+                        var insertItem = sourceItems[event.newIndex];
+                        this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), this.windowSize - 1));
+                        this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), newWIndex));
+                    }
                 }
 
                 break;
