@@ -874,6 +874,25 @@ export class SortView<T> implements IDataSource<T>
         this.setSortColumn(null);
     }
 
+    public validateSortOrder()
+    {
+        if (!this.sortColumn)
+            return false;
+
+        var items = this.getAllItems();
+
+        for (var i = 1; i < items.length; i++)
+        {
+            var a = items[i - 1],
+                b = items[i];
+
+            if (this.sortDirection === SortDirection.Ascending)
+                console.assert(this.sortColumn.getSortValue(a) <= this.sortColumn.getSortValue(b));
+            else
+                console.assert(this.sortColumn.getSortValue(a) >= this.sortColumn.getSortValue(b));
+        }
+    }
+
     public getSortDirection() { return this.sortDirection; }
 
     public setSortColumn(column: IColumn<T>)
