@@ -223,6 +223,7 @@ describe("window view", () =>
             {
                 source.move(5, 2);
 
+                expect(source.getAllItems()).toEqual(["A", "B", "F", "C", "D", "E"]);
                 expect(windowView.getAllItems()).toEqual(["F", "C", "D"]);
 
                 expect(events.length).toEqual(2);
@@ -237,6 +238,7 @@ describe("window view", () =>
             {
                 source.move(0, 2);
 
+                expect(source.getAllItems()).toEqual(["B", "C", "A", "D", "E", "F"]);
                 expect(windowView.getAllItems()).toEqual(["A", "C", "D"]);
 
                 expect(events.length).toEqual(2);
@@ -251,6 +253,7 @@ describe("window view", () =>
             {
                 source.move(3, 1);
 
+                expect(source.getAllItems()).toEqual(["A", "D", "B", "C", "E", "F"]);
                 expect(windowView.getAllItems()).toEqual(["B", "C", "E"]);
 
                 expect(events.length).toEqual(2);
@@ -265,6 +268,7 @@ describe("window view", () =>
             {
                 source.move(3, 5);
 
+                expect(source.getAllItems()).toEqual(["A", "B", "C", "E", "F", "D"]);
                 expect(windowView.getAllItems()).toEqual(["C", "E", "F"]);
 
                 expect(events.length).toEqual(2);
