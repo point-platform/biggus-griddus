@@ -1066,7 +1066,7 @@ export class WindowView<T> implements IDataSource<T>
         // If enough items exist after the window, slurp one in
         var sourceItems = this.source.getAllItems();
 
-        if (this.offset + this.windowSize < sourceItems.length)
+        if (this.offset + this.windowSize <= sourceItems.length)
         {
             var appendItem = sourceItems[this.offset + this.windowSize - 1];
             this.changed.raise(CollectionChange.insert(appendItem, this.getItemId(appendItem), this.windowSize - 1));
