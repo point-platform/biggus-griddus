@@ -1075,11 +1075,16 @@ export class WindowView<T> implements IDataSource<T>
 
     private insert(item: T, itemId: string, windowIndex: number)
     {
-        this.changed.raise(CollectionChange.insert(item, itemId, windowIndex));
+        var sourceItems = this.source.getAllItems();
 
         // If we have too many items, remove one from the end
-        if (this.offset + this.windowSize < this.source.getAllItems().length)
-            this.changed.raise(CollectionChange.remove(item, itemId, this.windowSize));
+        if (this.offset + this.windowSize < sourceItems.length)
+        {
+            var removeItem = sourceItems[this.offset + this.windowSize];
+            this.changed.raise(CollectionChange.remove(removeItem, this.getItemId(removeItem), this.windowSize - 1));
+        }
+
+        this.changed.raise(CollectionChange.insert(item, itemId, windowIndex));
     }
 
     private isValidWindowIndex(windowIndex: number)
