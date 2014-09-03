@@ -1091,8 +1091,9 @@ export class WindowView<T> implements IDataSource<T>
         var diff = offset - oldOffset;
         var items = this.source.getAllItems();
 
-        if (Math.abs(diff) > this.windowSize)
+        if (Math.abs(diff) >= this.windowSize)
         {
+            // Enough has changed that it's less work for clients to just reset
             this.changed.raise(CollectionChange.reset<T>());
         }
         else if (diff > 0)
