@@ -646,6 +646,15 @@ export class DataSource<T> implements IDataSource<T>
         this.changed.raise(CollectionChange.remove(removed, this.getItemId(removed), index));
     }
 
+    public move(oldIndex: number, newIndex: number)
+    {
+        console.assert(oldIndex >= 0);
+        console.assert(newIndex >= 0);
+        var item = this.items.splice(oldIndex, 1)[0];
+        this.items.splice(newIndex, 0, item);
+        this.changed.raise(CollectionChange.move(item, this.getItemId(item), newIndex, oldIndex));
+    }
+
     public get(index: number)
     {
         return this.items[index];
