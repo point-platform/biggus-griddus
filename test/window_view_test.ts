@@ -217,6 +217,8 @@ describe("window view", () =>
             {
                 source.move(4, 2);
 
+                expect(source.getAllItems()).toEqual(["A", "B", "E", "C", "D", "F"]);
+                expect(windowView.getAllItems()).toEqual(["E", "C", "D"]);
                 expect(events).toEqual([biggus.CollectionChange.move("E", "E", 0, 2)]);
             });
         });
