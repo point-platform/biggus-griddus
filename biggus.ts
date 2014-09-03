@@ -996,8 +996,6 @@ export class WindowView<T> implements IDataSource<T>
                 var windowIndex = this.toWindowIndex(event.newIndex);
                 if (this.isValidWindowIndex(windowIndex))
                     this.insert(event.item, event.itemId, windowIndex);
-                else if (windowIndex < 0)
-                    this.offset++;
                 break;
             }
             case CollectionChangeType.Remove:
