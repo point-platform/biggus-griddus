@@ -16,46 +16,254 @@ describe("window view", () =>
     {
         source = new biggus.DataSource<string>(i => i);
         windowView = new biggus.WindowView<string>(source, 3);
-    });
 
-    it("appends correctly, up to the window size", () =>
-    {
         expect(windowView.getWindowSize()).toEqual(3);
         expect(windowView.getWindowOffset()).toEqual(0);
+    });
 
-        windowView.changed.collect(events =>
+    describe("on insert", () =>
+    {
+        it("appends correctly, up to the window size", () =>
+        {
+            var windowSize = 3;
+
+            windowView.setWindowSize(windowSize);
+
+            windowView.changed.collect(events =>
+            {
+                source.addRange(sourceItems);
+
+                expect(events.length).toEqual(windowSize);
+
+                for (var i = 0; i < windowSize; i++)
+                    expect(events[i])
+                        .toEqual(biggus.CollectionChange.insert(sourceItems[i], sourceItems[i], i));
+            });
+
+            expect(windowView.getAllItems()).toEqual(["A", "B", "C"]);
+        });
+
+        it("maintains correct offset while values are added", () =>
+        {
+            expect(windowView.getWindowOffset()).toEqual(0);
+            source.addRange(sourceItems);
+            windowView.setWindowOffset(2);
+            source.addRange(sourceItems);
+            expect(windowView.getWindowOffset()).toEqual(2);
+        });
+
+        it("deals with an offset greater than the number of items present", () =>
+        {
+            expect(windowView.getWindowOffset()).toEqual(0);
+            windowView.setWindowOffset(2);
+            expect(source.getAllItems()).toEqual([]);
+            source.addRange(sourceItems);
+            expect(windowView.getWindowOffset()).toEqual(2);
+        });
+    });
+
+    describe("on remove", () =>
+    {
+        beforeEach(() =>
+        {
+            windowView.setWindowOffset(2);
+            windowView.setWindowSize(3);
+            source.addRange(sourceItems);
+
+            expect(windowView.getAllItems()).toEqual(["C", "D", "E"]);
+        });
+
+        it("handles item within window being removed, with more items after window", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                source.removeAt(2);
+
+                expect(events).toEqual([
+                    biggus.CollectionChange.remove("C", "C", 0),
+                    biggus.CollectionChange.insert("F", "F", 2)
+                ]);
+            });
+        });
+
+        it("handles item within window being removed, with no items after window", () =>
+        {
+            windowView.setWindowOffset(3);
+            expect(windowView.getAllItems()).toEqual(["D", "E", "F"]);
+
+            windowView.changed.collect(events =>
+            {
+                source.changed.raise(biggus.CollectionChange.remove("D", "D", 3));
+
+                expect(events).toEqual([biggus.CollectionChange.remove("D", "D", 0)]);
+            });
+
+            expect(windowView.getWindowOffset()).toEqual(3);
+        });
+
+        it("handles item after window being removed", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                source.removeAt(5);
+
+                expect(events).toEqual([]);
+            });
+
+            expect(windowView.getWindowOffset()).toEqual(2);
+        });
+
+        it("handles item before window being removed", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                expect(windowView.getWindowOffset()).toEqual(2);
+
+                source.changed.raise(biggus.CollectionChange.remove("A", "A", 0));
+
+                // Window appears same, but has shifted up one unit relative to the source (offset decremented)
+                expect(events).toEqual([]);
+                expect(windowView.getWindowOffset()).toEqual(1);
+            });
+        });
+    });
+
+    describe("on reset", () =>
+    {
+        it("maintains window parameters", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                windowView.setWindowOffset(2);
+                windowView.setWindowSize(3);
+
+                source.changed.raise(biggus.CollectionChange.reset<string>());
+
+                expect(events).toEqual([biggus.CollectionChange.reset<string>()]);
+                expect(windowView.getWindowOffset()).toEqual(2);
+                expect(windowView.getWindowSize()).toEqual(3);
+            });
+        });
+    });
+
+    describe("on update", () =>
+    {
+        it("ignores updates for items not in the window", () =>
         {
             source.addRange(sourceItems);
 
-            expect(events.length).toEqual(3);
+            windowView.setWindowOffset(2);
+            windowView.setWindowSize(2);
 
-            for (var i = 0; i < events.length; i++)
+            windowView.changed.collect(events =>
             {
-                expect(events[i].item).toEqual(sourceItems[i]);
-                expect(events[i].type).toEqual(biggus.CollectionChangeType.Insert);
-                expect(events[i].itemId).toEqual(sourceItems[i]);
-                expect(events[i].newIndex).toEqual(i);
-            }
+                source.changed.raise(biggus.CollectionChange.update("A", "A", 0));
+                source.changed.raise(biggus.CollectionChange.update("B", "B", 1));
+                source.changed.raise(biggus.CollectionChange.update("E", "E", 4));
+                source.changed.raise(biggus.CollectionChange.update("F", "F", 5));
+
+                expect(events.length).toEqual(0);
+            });
         });
 
-        expect(windowView.getAllItems()).toEqual(["A", "B", "C"]);
+        it("propagates updates for items within the window", () =>
+        {
+            source.addRange(sourceItems);
+
+            windowView.setWindowOffset(2);
+            windowView.setWindowSize(2);
+
+            windowView.changed.collect(events =>
+            {
+                source.changed.raise(biggus.CollectionChange.update("C", "C", 2));
+                source.changed.raise(biggus.CollectionChange.update("D", "D", 3));
+
+                expect(events).toEqual([
+                    biggus.CollectionChange.update("C", "C", 0),
+                    biggus.CollectionChange.update("D", "D", 1)
+                ]);
+            });
+        });
     });
 
-    it("maintains correct offset while values are added", () =>
+    describe("on move", () =>
     {
-        expect(windowView.getWindowOffset()).toEqual(0);
-        source.addRange(sourceItems);
-        windowView.setWindowOffset(2);
-        source.addRange(sourceItems);
-        expect(windowView.getWindowOffset()).toEqual(2);
-    });
+        beforeEach(() =>
+        {
+            windowView.setWindowOffset(2);
+            windowView.setWindowSize(3);
+            source.addRange(sourceItems);
 
-    it("deals with an offset greater than the number of items present", () =>
-    {
-        expect(windowView.getWindowOffset()).toEqual(0);
-        windowView.setWindowOffset(2);
-        source.addRange(sourceItems);
-        expect(windowView.getWindowOffset()).toEqual(2);
+            expect(windowView.getAllItems()).toEqual(["C", "D", "E"]);
+        });
+
+        it("forward within window", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                source.changed.raise(biggus.CollectionChange.move("C", "C", 4, 2));
+
+                expect(events).toEqual([biggus.CollectionChange.move("C", "C", 2, 0)]);
+            });
+        });
+
+        it("backward within window", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                source.changed.raise(biggus.CollectionChange.move("E", "E", 2, 4));
+
+                expect(events).toEqual([biggus.CollectionChange.move("E", "E", 0, 2)]);
+            });
+        });
+
+        it("into window from after window", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                source.changed.raise(biggus.CollectionChange.move("F", "F", 2, 5));
+
+                expect(events.length).toEqual(2);
+                expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
+                expect(events[1]).toEqual(biggus.CollectionChange.insert("F", "F", 0));
+            });
+        });
+
+        it("into window from before window", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                source.changed.raise(biggus.CollectionChange.move("A", "A", 2, 0));
+
+                expect(events.length).toEqual(2);
+                expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
+                expect(events[1]).toEqual(biggus.CollectionChange.insert("A", "A", 0));
+            });
+        });
+
+        it("out from inside window to before", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                source.changed.raise(biggus.CollectionChange.move("D", "D", 1, 3));
+
+                expect(events.length).toEqual(2);
+                expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
+                expect(events[1]).toEqual(biggus.CollectionChange.insert("A", "A", 0));
+            });
+        });
+
+        it("out from inside window to after", () =>
+        {
+            windowView.changed.collect(events =>
+            {
+                source.changed.raise(biggus.CollectionChange.move("D", "D", 5, 3));
+
+                expect(events.length).toEqual(2);
+                expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
+                expect(events[1]).toEqual(biggus.CollectionChange.insert("A", "A", 0));
+            });
+        });
     });
 
     it("raises correct events when offset increased", () =>
@@ -66,15 +274,10 @@ describe("window view", () =>
         {
             windowView.setWindowOffset(1);
 
-            expect(events.length).toEqual(2);
-
-            expect(events[0].item).toEqual("A");
-            expect(events[0].oldIndex).toEqual(0);
-            expect(events[0].type).toEqual(biggus.CollectionChangeType.Remove);
-
-            expect(events[1].item).toEqual("D");
-            expect(events[1].newIndex).toEqual(2);
-            expect(events[1].type).toEqual(biggus.CollectionChangeType.Insert);
+            expect(events).toEqual([
+                biggus.CollectionChange.remove("A", "A", 0),
+                biggus.CollectionChange.insert("D", "D", 2)
+            ]);
         });
 
         expect(windowView.getAllItems()).toEqual(["B", "C", "D"]);
@@ -82,28 +285,29 @@ describe("window view", () =>
 
     it("raises correct events when offset decreased", () =>
     {
-        windowView.setWindowOffset(1);
+        windowView.setWindowOffset(2);
 
         source.addRange(sourceItems);
 
-        expect(windowView.getWindowOffset()).toEqual(1);
+        expect(windowView.getWindowOffset()).toEqual(2);
+        expect(windowView.getWindowSize()).toEqual(3);
+
+        expect(windowView.getAllItems()).toEqual(["C", "D", "E"]);
 
         windowView.changed.collect(events =>
         {
             windowView.setWindowOffset(0);
 
-            expect(events.length).toEqual(2);
-
-            expect(events[0].item).toEqual("A");
-            expect(events[0].newIndex).toEqual(0);
-            expect(events[0].type).toEqual(biggus.CollectionChangeType.Insert);
-
-            expect(events[1].item).toEqual("D");
-            expect(events[1].oldIndex).toEqual(2);
-            expect(events[1].type).toEqual(biggus.CollectionChangeType.Remove);
+            // Alternate removals and insertions to minimise O(N) copying
+            // TODO investigate using removal/insertion of ranges here
+            expect(events.length).toEqual(4);
+            expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
+            expect(events[1]).toEqual(biggus.CollectionChange.insert("B", "B", 0));
+            expect(events[2]).toEqual(biggus.CollectionChange.remove("D", "D", 2));
+            expect(events[3]).toEqual(biggus.CollectionChange.insert("A", "A", 0));
         });
 
-        expect(windowView.getAllItems()).toEqual(["B", "C", "D"]);
+        expect(windowView.getAllItems()).toEqual(["A", "B", "C"]);
     });
 
     it("resets when offset moved such that there is no overlap between old and new windows", () =>
@@ -117,29 +321,9 @@ describe("window view", () =>
         {
             windowView.setWindowOffset(2);
 
-            expect(events.length).toEqual(1);
-
-            expect(events[0].type).toEqual(biggus.CollectionChangeType.Reset);
+            expect(events).toEqual([biggus.CollectionChange.reset()]);
         });
 
         expect(windowView.getAllItems()).toEqual(["C", "D"]);
-    });
-
-    it("ignores updates for items not in the window", () =>
-    {
-        source.addRange(sourceItems);
-
-        windowView.setWindowOffset(2);
-        windowView.setWindowSize(2);
-
-        windowView.changed.collect(events =>
-        {
-            source.changed.raise(biggus.CollectionChange.update("A", "A", 0));
-            source.changed.raise(biggus.CollectionChange.update("B", "B", 1));
-            source.changed.raise(biggus.CollectionChange.update("E", "E", 4));
-            source.changed.raise(biggus.CollectionChange.update("F", "F", 5));
-
-            expect(events.length).toEqual(0);
-        });
     });
 });
