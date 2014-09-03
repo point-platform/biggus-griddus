@@ -254,8 +254,8 @@ describe("window view", () =>
                 expect(windowView.getAllItems()).toEqual(["B", "C", "E"]);
 
                 expect(events.length).toEqual(2);
-                expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
-                expect(events[1]).toEqual(biggus.CollectionChange.insert("A", "A", 0));
+                expect(events[0]).toEqual(biggus.CollectionChange.remove("D", "D", 1));
+                expect(events[1]).toEqual(biggus.CollectionChange.insert("B", "B", 0));
             });
         });
 
@@ -268,8 +268,8 @@ describe("window view", () =>
                 expect(windowView.getAllItems()).toEqual(["C", "E", "F"]);
 
                 expect(events.length).toEqual(2);
-                expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
-                expect(events[1]).toEqual(biggus.CollectionChange.insert("A", "A", 0));
+                expect(events[0]).toEqual(biggus.CollectionChange.remove("D", "D", 1));
+                expect(events[1]).toEqual(biggus.CollectionChange.insert("F", "F", 2));
             });
         });
     });
