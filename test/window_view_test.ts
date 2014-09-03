@@ -93,7 +93,7 @@ describe("window view", () =>
 
             windowView.changed.collect(events =>
             {
-                source.changed.raise(biggus.CollectionChange.remove("D", "D", 3));
+                source.removeAt(3);
 
                 expect(events).toEqual([biggus.CollectionChange.remove("D", "D", 0)]);
             });
@@ -119,7 +119,7 @@ describe("window view", () =>
             {
                 expect(windowView.getWindowOffset()).toEqual(2);
 
-                source.changed.raise(biggus.CollectionChange.remove("A", "A", 0));
+                source.removeAt(0);
 
                 // Window appears same, but has shifted up one unit relative to the source (offset decremented)
                 expect(events).toEqual([]);
