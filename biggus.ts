@@ -517,11 +517,11 @@ export function mixinNotifyChange(obj: any)
 
 export enum CollectionChangeType
 {
-    Insert,
-    Update,
-    Remove,
-    Move,
-    Reset
+    Insert = 0,
+    Update = 1,
+    Remove = 2,
+    Move = 3,
+    Reset = 4
 }
 
 export class CollectionChange<T>
