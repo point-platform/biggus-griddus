@@ -219,11 +219,12 @@ describe("window view", () =>
 
                 expect(source.getAllItems()).toEqual(["A", "B", "E", "C", "D", "F"]);
                 expect(windowView.getAllItems()).toEqual(["E", "C", "D"]);
+
                 expect(events).toEqual([biggus.CollectionChange.move("E", "E", 0, 2)]);
             });
         });
 
-        it("before window to after window", () =>
+        it("before -> after", () =>
         {
             windowView.changed.collect(events =>
             {
@@ -238,7 +239,7 @@ describe("window view", () =>
             });
         });
 
-        it("after window to before window", () =>
+        it("after -> before", () =>
         {
             windowView.changed.collect(events =>
             {
@@ -253,7 +254,7 @@ describe("window view", () =>
             });
         });
 
-        it("into window from after window", () =>
+        it("after -> inside", () =>
         {
             windowView.changed.collect(events =>
             {
@@ -268,7 +269,7 @@ describe("window view", () =>
             });
         });
 
-        it("into window (top) from before window", () =>
+        it("before -> inside (top)", () =>
         {
             windowView.changed.collect(events =>
             {
@@ -283,7 +284,7 @@ describe("window view", () =>
             });
         });
 
-        it("into window (mid) from before window", () =>
+        it("before -> inside (mid)", () =>
         {
             windowView.changed.collect(events =>
             {
@@ -298,7 +299,7 @@ describe("window view", () =>
             });
         });
 
-        it("out from inside window to before", () =>
+        it("inside -> before", () =>
         {
             windowView.changed.collect(events =>
             {
@@ -313,7 +314,7 @@ describe("window view", () =>
             });
         });
 
-        it("out from inside window to after", () =>
+        it("inside -> after", () =>
         {
             windowView.changed.collect(events =>
             {
