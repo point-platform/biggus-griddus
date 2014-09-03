@@ -223,6 +223,8 @@ describe("window view", () =>
             {
                 source.move(5, 2);
 
+                expect(windowView.getAllItems()).toEqual(["F", "C", "D"]);
+
                 expect(events.length).toEqual(2);
                 expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
                 expect(events[1]).toEqual(biggus.CollectionChange.insert("F", "F", 0));
@@ -234,6 +236,8 @@ describe("window view", () =>
             windowView.changed.collect(events =>
             {
                 source.move(0, 2);
+
+                expect(windowView.getAllItems()).toEqual(["A", "C", "D"]);
 
                 expect(events.length).toEqual(2);
                 expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
@@ -247,6 +251,8 @@ describe("window view", () =>
             {
                 source.move(3, 1);
 
+                expect(windowView.getAllItems()).toEqual(["B", "C", "E"]);
+
                 expect(events.length).toEqual(2);
                 expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
                 expect(events[1]).toEqual(biggus.CollectionChange.insert("A", "A", 0));
@@ -258,6 +264,8 @@ describe("window view", () =>
             windowView.changed.collect(events =>
             {
                 source.move(3, 5);
+
+                expect(windowView.getAllItems()).toEqual(["C", "E", "F"]);
 
                 expect(events.length).toEqual(2);
                 expect(events[0]).toEqual(biggus.CollectionChange.remove("E", "E", 2));
