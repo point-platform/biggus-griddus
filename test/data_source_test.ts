@@ -95,4 +95,17 @@ describe("data source", () =>
             expect(source.getAllItems()).toEqual(["2", "1", "3"]);
         });
     });
+
+    describe("on reset", () =>
+    {
+        it("raises reset event", () =>
+        {
+            source.changed.collect(events =>
+            {
+                source.reset();
+
+                expect(events).toEqual([biggus.CollectionChange.reset<string>()]);
+            })
+        });
+    });
 });

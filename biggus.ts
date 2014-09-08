@@ -669,6 +669,11 @@ export class DataSource<T> implements IDataSource<T>
     {
         throw new Error("Should be rebound in constructor.");
     }
+
+    public reset()
+    {
+        this.changed.raise(CollectionChange.reset<T>());
+    }
 }
 
 export class FilterView<T> implements IDataSource<T>
