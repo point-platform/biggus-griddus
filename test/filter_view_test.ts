@@ -10,11 +10,17 @@ import biggus = require('../biggus');
 
 describe("filter view", () =>
 {
+    var source: biggus.DataSource<string>;
+    var filterView: biggus.FilterView<string>;
+
+    beforeEach(() =>
+    {
+        source = new biggus.DataSource<string>(i => i);
+        filterView = new biggus.FilterView<string>(source);
+    });
+
     it("appends correctly when no predicate specified", () =>
     {
-        var source = new biggus.DataSource<string>(i => i);
-        var filterView = new biggus.FilterView<string>(source);
-
         filterView.changed.collect(events =>
         {
             source.add("A");
@@ -39,9 +45,6 @@ describe("filter view", () =>
 
     it("appends correctly when no predicate specified", () =>
     {
-        var source = new biggus.DataSource<string>(i => i);
-        var filterView = new biggus.FilterView<string>(source);
-
         filterView.changed.collect(events =>
         {
             source.add("A");
@@ -72,9 +75,6 @@ describe("filter view", () =>
 
     it("reinserts items when filter removed", () =>
     {
-        var source = new biggus.DataSource<string>(i => i);
-        var filterView = new biggus.FilterView<string>(source);
-
         filterView.setPredicate(s => s.length < 3);
 
         source.add("A");
