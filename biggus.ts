@@ -1243,13 +1243,19 @@ export class WindowView<T> implements IDataSource<T>
             for (var i = diff - 1; i >= 0; i--) {
                 // Remove from bottom
                 var sourceIndex = this.offset + this.windowSize + i;
-                var item = items[sourceIndex];
-                this.changed.raise(CollectionChange.remove(item, this.getItemId(item), this.windowSize - 1));
+                if (sourceIndex >= 0 && sourceIndex < items.length)
+                {
+                    var item = items[sourceIndex];
+                    this.changed.raise(CollectionChange.remove(item, this.getItemId(item), this.windowSize - 1));
+                }
 
                 // Introduce at top
                 sourceIndex = this.offset + i;
-                item = items[sourceIndex];
-                this.changed.raise(CollectionChange.insert(item, this.getItemId(item), 0));
+                if (sourceIndex >= 0 && sourceIndex < items.length)
+                {
+                    item = items[sourceIndex];
+                    this.changed.raise(CollectionChange.insert(item, this.getItemId(item), 0));
+                }
             }
         }
     }
