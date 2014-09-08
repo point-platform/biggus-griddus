@@ -1533,9 +1533,15 @@ export class Grid<TRow>
         var child = this.tbody.children[oldIndex];
 
         if (newIndex === this.tbody.childElementCount)
+        {
             this.tbody.appendChild(child);
+        }
         else
-            this.tbody.insertBefore(child, this.tbody.children[newIndex]);
+        {
+            var adjustedNewIndex = oldIndex < newIndex ? newIndex + 1 : newIndex;
+            //var adjustedNewIndex = oldIndex < newIndex ? newIndex : newIndex;
+            this.tbody.insertBefore(child, this.tbody.children[adjustedNewIndex]);
+        }
     }
 
     private flashRow(tr: HTMLTableRowElement)
