@@ -151,4 +151,53 @@ describe("sort view", () =>
 
         expect(sortView.getAllItems()).toEqual(["F","E","D","C","B","A"]);
     });
+
+    it("handles resets when sorted", () =>
+    {
+        var source = new biggus.DataSource<string>(i => i);
+        var sortView = new biggus.SortView<string>(source);
+        var column = new biggus.TextColumn<string>({value: i => i});
+
+        sortView.setSortColumn(column);
+
+        source.add("1");
+        source.add("8");
+        source.add("5");
+
+        sortView.changed.collect(events =>
+        {
+            (<any>source).items.push("2");
+            (<any>source).items.push("7");
+            (<any>source).items.push("3");
+
+            source.reset();
+
+            expect(events).toEqual([biggus.CollectionChange.reset<string>()]);
+
+            expect(sortView.getAllItems()).toEqual(["1", "2", "3", "5", "7", "8"]);
+        })
+    });
+
+    it("handles resets when unsorted", () =>
+    {
+        var source = new biggus.DataSource<string>(i => i);
+        var sortView = new biggus.SortView<string>(source);
+
+        source.add("1");
+        source.add("8");
+        source.add("5");
+
+        sortView.changed.collect(events =>
+        {
+            (<any>source).items.push("2");
+            (<any>source).items.push("7");
+            (<any>source).items.push("3");
+
+            source.reset();
+
+            expect(events).toEqual([biggus.CollectionChange.reset<string>()]);
+
+            expect(sortView.getAllItems()).toEqual(["1", "8", "5", "2", "7", "3"]);
+        })
+    });
 });

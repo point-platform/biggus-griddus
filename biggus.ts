@@ -934,14 +934,22 @@ export class SortView<T> implements IDataSource<T>
 
         this.sortColumn = column;
 
-        var dir = this.sortDirection === SortDirection.Ascending ? 1 : -1;
+        this.reset();
+    }
 
-        this.items.sort((a, b) =>
+    private reset()
+    {
+        if (this.sortColumn)
         {
-            var v1 = column.getSortValue(a);
-            var v2 = column.getSortValue(b);
-            return dir * (v1 < v2 ? -1 : v1 === v2 ? 0 : 1);
-        });
+            var dir = this.sortDirection === SortDirection.Ascending ? 1 : -1;
+
+            this.items.sort((a, b) =>
+            {
+                var v1 = this.sortColumn.getSortValue(a);
+                var v2 = this.sortColumn.getSortValue(b);
+                return dir * (v1 < v2 ? -1 : v1 === v2 ? 0 : 1);
+            });
+        }
 
         this.changed.raise(CollectionChange.reset<T>());
     }
@@ -1002,8 +1010,8 @@ export class SortView<T> implements IDataSource<T>
             }
             case CollectionChangeType.Reset:
             {
-                console.error("Reset not supported");
-                debugger;
+                this.items = [].concat(this.source.getAllItems());
+                this.reset();
                 break;
             }
         }
