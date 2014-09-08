@@ -695,7 +695,7 @@ export class FilterView<T> implements IDataSource<T>
 
     private onSourceChanged(event: CollectionChange<T>)
     {
-        var passesFilter = !this.predicate || this.predicate(event.item);
+        var passesFilter = event.item && (!this.predicate || this.predicate(event.item));
 
         switch (event.type)
         {
@@ -749,8 +749,27 @@ export class FilterView<T> implements IDataSource<T>
             }
             case CollectionChangeType.Reset:
             {
-                console.error("Reset not supported");
-                debugger;
+                this.items = [];
+                this.itemFilterState = {};
+                var sourceItems = this.source.getAllItems();
+                if (this.predicate)
+                {
+                    for (var i = 0; i < sourceItems.length; i++)
+                    {
+                        var item = sourceItems[i];
+                        var matches = this.predicate(item);
+                        this.itemFilterState[this.getItemId(item)] = matches;
+                        if (matches)
+                            this.items.push(item);
+                    }
+                }
+                else
+                {
+                    this.items = this.items.concat(sourceItems);
+                    for (var i = 0; i < sourceItems.length; i++)
+                        this.itemFilterState[this.getItemId(sourceItems[i])] = true;
+                }
+                this.changed.raise(event);
                 break;
             }
         }

@@ -98,4 +98,26 @@ describe("filter view", () =>
             expect(events[1].item).toEqual("FFF");
         });
     });
+
+    it("propagates reset events", () =>
+    {
+        filterView.setPredicate(s => s.length < 3);
+
+        source.add("A");
+        source.add("BB");
+        source.add("CCC");
+
+        filterView.changed.collect(events =>
+        {
+            (<any>source).items.push("a");
+            (<any>source).items.push("bbb");
+            (<any>source).items.push("c");
+
+            source.reset();
+
+            expect(events).toEqual([biggus.CollectionChange.reset<string>()]);
+
+            expect(filterView.getAllItems()).toEqual(["A", "BB", "a", "c"]);
+        })
+    });
 });
