@@ -1443,7 +1443,7 @@ export class Grid<TRow>
 
         var items = this.source.getAllItems();
         for (var i = 0; i < items.length; i++)
-            this.insertRow(items[i], this.source.getItemId(items[i]), i);
+            this.insertRow(items[i], this.source.getItemId(items[i]), i, false);
     }
 
     private updateFilter()
@@ -1477,7 +1477,7 @@ export class Grid<TRow>
         {
             case CollectionChangeType.Insert:
             {
-                this.insertRow(event.item, event.itemId, event.newIndex);
+                this.insertRow(event.item, event.itemId, event.newIndex, true);
                 break;
             }
             case CollectionChangeType.Remove:
@@ -1512,7 +1512,7 @@ export class Grid<TRow>
         delete this.rowModelById[itemId];
     }
 
-    private insertRow(item: TRow, itemId: string, index: number)
+    private insertRow(item: TRow, itemId: string, index: number, flash: boolean)
     {
         console.assert(index >= 0);
         console.assert(typeof(this.rowModelById[itemId]) === 'undefined', "Inserted row should not have a row model");
@@ -1525,6 +1525,9 @@ export class Grid<TRow>
             this.tbody.appendChild(tr);
         else
             this.tbody.insertBefore(tr, this.tbody.children[index]);
+
+        if (flash)
+            this.flashRow(tr);
     }
 
     private updateRow(itemId: string)
