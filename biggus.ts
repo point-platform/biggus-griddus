@@ -1104,12 +1104,12 @@ export class WindowView<T> implements IDataSource<T>
                 var removeItem: T,
                     insertItem: T,
                     removeIndex: number,
-                    insertIndex: number;
+                    insertIndex: number,
+                    sourceItems = this.source.getAllItems();
 
                 if (wasBefore && isAfter)
                 {
                     // before -> after -- pull everything up one
-                    var sourceItems = this.source.getAllItems();
                     removeItem = sourceItems[this.offset - 1];
                     insertItem = sourceItems[this.offset + this.windowSize - 1];
                     removeIndex = 0;
@@ -1118,7 +1118,6 @@ export class WindowView<T> implements IDataSource<T>
                 else if (wasAfter && isBefore)
                 {
                     // after -> before -- push everything down one
-                    var sourceItems = this.source.getAllItems();
                     removeItem = sourceItems[this.offset + this.windowSize];
                     insertItem = sourceItems[this.offset];
                     removeIndex = this.windowSize - 1;
@@ -1127,51 +1126,37 @@ export class WindowView<T> implements IDataSource<T>
                 else if (wasIn)
                 {
                     // inside -> outside
-
-                    console.assert(!isIn);
-
+                    removeItem = sourceItems[event.newIndex];
+                    removeIndex = oldWIndex;
                     if (isBefore)
                     {
                         // inside -> before
-                        var sourceItems = this.source.getAllItems();
-                        removeItem = sourceItems[event.newIndex];
                         insertItem = sourceItems[this.offset];
-                        removeIndex = oldWIndex;
                         insertIndex = 0;
                     }
                     else
                     {
                         // inside -> after
-                        console.assert(isAfter);
-                        var sourceItems = this.source.getAllItems();
-                        removeItem = sourceItems[event.newIndex];
                         insertItem = sourceItems[this.offset + this.windowSize - 1];
-                        removeIndex = oldWIndex;
                         insertIndex = this.windowSize - 1;
                     }
                 }
                 else
                 {
                     // outside -> inside
-                    console.assert(!wasIn && isIn);
+                    insertItem = sourceItems[event.newIndex];
+                    insertIndex = newWIndex;
                     if (wasBefore)
                     {
                         // before -> inside
-                        var sourceItems = this.source.getAllItems();
                         removeItem = sourceItems[this.offset - 1];
-                        insertItem = sourceItems[event.newIndex];
                         removeIndex = 0;
-                        insertIndex = newWIndex;
                     }
                     else
                     {
                         // after -> inside
-                        console.assert(wasAfter);
-                        var sourceItems = this.source.getAllItems();
                         removeItem = sourceItems[this.offset + this.windowSize];
-                        insertItem = sourceItems[event.newIndex];
                         removeIndex = this.windowSize - 1;
-                        insertIndex = newWIndex;
                     }
                 }
 
