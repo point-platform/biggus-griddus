@@ -1429,7 +1429,12 @@ export class Grid<TRow>
         this.scrollInner = document.createElement('div');
         this.scrollCell.appendChild(this.scrollOuter);
         this.scrollOuter.appendChild(this.scrollInner);
-        this.scrollInner.style.height = '200px';
+        var scrollRow = document.createElement('tr');
+        var scrollVoidCell = document.createElement('td');
+        scrollVoidCell.colSpan = this.options.columns.length;
+        scrollRow.appendChild(scrollVoidCell);
+        scrollRow.appendChild(this.scrollCell);
+        this.tbody.appendChild(scrollRow);
 
         this.table.addEventListener('mousewheel', e =>
         {
@@ -1485,14 +1490,10 @@ export class Grid<TRow>
 
     private updateScrollbar()
     {
-        // Check the current (actual) number of child rows (this may not be the target, eg during reset)
-        if (this.tbody.childElementCount != 0)
-            this.tbody.children[0].appendChild(this.scrollCell);
-
         // Calculate the target number of rows
         var rowCount = this.windowSource.getAllItems().length;
 
-        this.scrollCell.rowSpan = rowCount;
+        this.scrollCell.rowSpan = rowCount + 1;
 
         var heightScale = this.windowSource.getUnderlyingItemCount() / rowCount;
         var height = this.tbody.clientHeight * heightScale;
@@ -1506,8 +1507,12 @@ export class Grid<TRow>
     {
         this.rowModelById = {};
 
-        clearChildren(this.tbody);
-        this.scrollCell.rowSpan = 0;
+        // Remove everything except the scroll row
+        while (this.tbody.childElementCount > 1) {
+            this.tbody.removeChild(this.tbody.lastChild);
+        }
+
+        this.scrollCell.rowSpan = 1;
 
         var items = this.source.getAllItems();
         for (var i = 0; i < items.length; i++)
@@ -1577,14 +1582,9 @@ export class Grid<TRow>
         console.assert(typeof(this.rowModelById[itemId]) !== 'undefined', "Removed row should have a row model");
         var rowModel = this.rowModelById[itemId];
 
-        var removedFirst = this.tbody.children[0] === rowModel.tr;
-
         this.tbody.removeChild(rowModel.tr);
         this.scrollCell.rowSpan--;
         delete this.rowModelById[itemId];
-
-        if (removedFirst)
-            this.updateScrollbar();
     }
 
     private insertRow(item: TRow, itemId: string, index: number, flash: boolean)
@@ -1596,10 +1596,11 @@ export class Grid<TRow>
         this.rowModelById[itemId] = rowModel;
         this.bindRow(rowModel);
 
-        if (index === this.tbody.childElementCount)
+        // We need to add one here to account for the scrollbar row
+        if (index === this.tbody.childElementCount + 1)
             this.tbody.appendChild(tr);
         else
-            this.tbody.insertBefore(tr, this.tbody.children[index]);
+            this.tbody.insertBefore(tr, this.tbody.children[index + 1]);
 
         this.scrollCell.rowSpan++;
 
@@ -1622,16 +1623,17 @@ export class Grid<TRow>
     {
         console.assert(oldIndex !== newIndex);
 
-        var tr = <HTMLTableRowElement>this.tbody.children[oldIndex];
+        // Add one to skip over the scroll row
+        var tr = <HTMLTableRowElement>this.tbody.children[oldIndex + 1];
 
-        if (newIndex === this.tbody.childElementCount)
+        if (newIndex === this.tbody.childElementCount + 1)
         {
             this.tbody.appendChild(tr);
         }
         else
         {
             var adjustedNewIndex = oldIndex < newIndex ? newIndex + 1 : newIndex;
-            this.tbody.insertBefore(tr, this.tbody.children[adjustedNewIndex]);
+            this.tbody.insertBefore(tr, this.tbody.children[adjustedNewIndex + 1]);
         }
 
         if (oldIndex === 0 || newIndex === 0)
