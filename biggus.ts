@@ -1543,17 +1543,17 @@ export class Grid<TRow>
     {
         console.assert(oldIndex !== newIndex);
 
-        var child = this.tbody.children[oldIndex];
+        var tr = <HTMLTableRowElement>this.tbody.children[oldIndex];
 
         if (newIndex === this.tbody.childElementCount)
         {
-            this.tbody.appendChild(child);
+            this.tbody.appendChild(tr);
         }
         else
         {
             var adjustedNewIndex = oldIndex < newIndex ? newIndex + 1 : newIndex;
             //var adjustedNewIndex = oldIndex < newIndex ? newIndex : newIndex;
-            this.tbody.insertBefore(child, this.tbody.children[adjustedNewIndex]);
+            this.tbody.insertBefore(tr, this.tbody.children[adjustedNewIndex]);
         }
     }
 
