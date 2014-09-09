@@ -1552,7 +1552,6 @@ export class Grid<TRow>
         else
         {
             var adjustedNewIndex = oldIndex < newIndex ? newIndex + 1 : newIndex;
-            //var adjustedNewIndex = oldIndex < newIndex ? newIndex : newIndex;
             this.tbody.insertBefore(tr, this.tbody.children[adjustedNewIndex]);
         }
     }
