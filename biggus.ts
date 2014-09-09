@@ -1490,7 +1490,7 @@ export class Grid<TRow>
             this.tbody.children[0].appendChild(this.scrollCell);
 
         // Calculate the target number of rows
-        var rowCount = Math.min(this.windowSource.getAllItems().length, this.windowSource.getWindowSize());
+        var rowCount = this.windowSource.getAllItems().length;
 
         this.scrollCell.rowSpan = rowCount;
 
