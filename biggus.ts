@@ -1329,6 +1329,11 @@ export class Grid<TRow>
     private windowSource: WindowView<TRow>;
     private source: IDataSource<TRow>;
 
+    private scrollColumnHeader: HTMLTableHeaderCellElement;
+    private scrollCell: HTMLTableCellElement;
+    private scrollOuter: HTMLDivElement;
+    private scrollInner: HTMLDivElement;
+
     constructor(source: IDataSource<TRow>, public table: HTMLTableElement, public options: IGridOptions<TRow>)
     {
         //
@@ -1413,6 +1418,20 @@ export class Grid<TRow>
         for (var c = 0; c < this.options.columns.length; c++)
             initialiseColumn(this.options.columns[c]);
 
+        this.scrollColumnHeader = document.createElement('th');
+        this.scrollColumnHeader.className = 'scroll';
+        this.scrollCell = document.createElement('td');
+        this.scrollCell.className = 'scroll';
+        this.scrollOuter = document.createElement('div');
+        this.scrollOuter.className = 'scroll-outer';
+        this.scrollInner = document.createElement('div');
+        this.scrollCell.appendChild(this.scrollOuter);
+        this.scrollOuter.appendChild(this.scrollInner);
+        this.scrollInner.style.height = '200px';
+
+        this.headerRow.appendChild(this.scrollColumnHeader);
+        this.filterRow.appendChild(document.createElement('td'));
+
         this.filterSource = new FilterView(source, null);
 
         this.sortSource = new SortView(this.filterSource);
@@ -1428,11 +1447,21 @@ export class Grid<TRow>
     public setWindowSize(size: number)
     {
         this.windowSource.setWindowSize(size);
+        this.updateScrollbar();
     }
 
     public setWindowOffset(offset: number)
     {
         this.windowSource.setWindowOffset(offset);
+        this.updateScrollbar();
+    }
+
+    private updateScrollbar()
+    {
+        if (this.tbody.childElementCount != 0)
+            this.tbody.children[0].appendChild(this.scrollCell);
+
+        this.scrollCell.rowSpan = this.tbody.childElementCount;
     }
 
     private reset()
@@ -1440,6 +1469,7 @@ export class Grid<TRow>
         this.rowModelById = {};
 
         clearChildren(this.tbody);
+        this.scrollCell.rowSpan = 0;
 
         var items = this.source.getAllItems();
         for (var i = 0; i < items.length; i++)
@@ -1508,8 +1538,15 @@ export class Grid<TRow>
     {
         console.assert(typeof(this.rowModelById[itemId]) !== 'undefined', "Removed row should have a row model");
         var rowModel = this.rowModelById[itemId];
+
+        var removedFirst = this.tbody.children[0] === rowModel.tr;
+
         this.tbody.removeChild(rowModel.tr);
+        this.scrollCell.rowSpan--;
         delete this.rowModelById[itemId];
+
+        if (removedFirst)
+            this.updateScrollbar();
     }
 
     private insertRow(item: TRow, itemId: string, index: number, flash: boolean)
@@ -1526,8 +1563,13 @@ export class Grid<TRow>
         else
             this.tbody.insertBefore(tr, this.tbody.children[index]);
 
+        this.scrollCell.rowSpan++;
+
         if (flash)
             this.flashRow(tr);
+
+        if (index === 0)
+            this.updateScrollbar();
     }
 
     private updateRow(itemId: string)
@@ -1554,6 +1596,9 @@ export class Grid<TRow>
             var adjustedNewIndex = oldIndex < newIndex ? newIndex + 1 : newIndex;
             this.tbody.insertBefore(tr, this.tbody.children[adjustedNewIndex]);
         }
+
+        if (oldIndex === 0 || newIndex === 0)
+            this.updateScrollbar();
     }
 
     private flashRow(tr: HTMLTableRowElement)
