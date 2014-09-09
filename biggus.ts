@@ -1448,6 +1448,14 @@ export class Grid<TRow>
             return false;
         });
 
+        this.scrollOuter.addEventListener('scroll', e =>
+        {
+            var height = this.scrollInner.clientHeight;
+            var scrollRatio = (this.scrollOuter.scrollTop / height);
+            var offset = Math.round(scrollRatio * this.windowSource.getUnderlyingItemCount());
+            this.windowSource.setWindowOffset(offset);
+        });
+
         this.headerRow.appendChild(this.scrollColumnHeader);
         this.filterRow.appendChild(document.createElement('td'));
 
