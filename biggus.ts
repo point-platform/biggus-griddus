@@ -1046,6 +1046,8 @@ export class WindowView<T> implements IDataSource<T>
     public getWindowSize() { return this.windowSize; }
     public getWindowOffset() { return this.offset; }
 
+    public getUnderlyingItemCount() { return this.source.getAllItems().length; }
+
     private toWindowIndex(index: number)
     {
         return index - this.offset;
@@ -1429,6 +1431,23 @@ export class Grid<TRow>
         this.scrollOuter.appendChild(this.scrollInner);
         this.scrollInner.style.height = '200px';
 
+        this.table.addEventListener('mousewheel', e =>
+        {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+
+            var offset = this.windowSource.getWindowOffset();
+            offset += e.wheelDelta < 0 ? 3 : -3;
+            offset = Math.max(offset, 0);
+            offset = Math.min(offset, this.sortSource.getAllItems().length - this.windowSource.getWindowSize());
+            this.windowSource.setWindowOffset(offset);
+
+            this.updateScrollbar();
+
+            return false;
+        });
+
         this.headerRow.appendChild(this.scrollColumnHeader);
         this.filterRow.appendChild(document.createElement('td'));
 
@@ -1458,10 +1477,21 @@ export class Grid<TRow>
 
     private updateScrollbar()
     {
+        // Check the current (actual) number of child rows (this may not be the target, eg during reset)
         if (this.tbody.childElementCount != 0)
             this.tbody.children[0].appendChild(this.scrollCell);
 
-        this.scrollCell.rowSpan = this.tbody.childElementCount;
+        // Calculate the target number of rows
+        var rowCount = Math.min(this.windowSource.getAllItems().length, this.windowSource.getWindowSize());
+
+        this.scrollCell.rowSpan = rowCount;
+
+        var heightScale = this.windowSource.getUnderlyingItemCount() / rowCount;
+        var height = this.tbody.clientHeight * heightScale;
+        this.scrollInner.style.height = height + 'px';
+
+        var startRatio = this.windowSource.getWindowOffset() / this.windowSource.getUnderlyingItemCount();
+        this.scrollOuter.scrollTop = height * startRatio;
     }
 
     private reset()
@@ -1568,8 +1598,7 @@ export class Grid<TRow>
         if (flash)
             this.flashRow(tr);
 
-        if (index === 0)
-            this.updateScrollbar();
+        this.updateScrollbar();
     }
 
     private updateRow(itemId: string)
