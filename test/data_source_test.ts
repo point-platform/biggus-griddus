@@ -77,7 +77,7 @@ describe("data source", () =>
             source.changed.collect(events =>
             {
                 source.move(0, 1);
-                expect(events).toEqual([biggus.CollectionChange.move("1", "1", 1, 0)]);
+                expect(events).toEqual([biggus.CollectionChange.move("1", "1", 0, 1)]);
             });
 
             expect(source.getAllItems()).toEqual(["2", "1", "3"]);
@@ -89,7 +89,7 @@ describe("data source", () =>
             source.changed.collect(events =>
             {
                 source.move(1, 0);
-                expect(events).toEqual([biggus.CollectionChange.move("2", "2", 0, 1)]);
+                expect(events).toEqual([biggus.CollectionChange.move("2", "2", 1, 0)]);
             });
 
             expect(source.getAllItems()).toEqual(["2", "1", "3"]);

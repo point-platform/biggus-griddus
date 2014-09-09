@@ -565,14 +565,14 @@ export class CollectionChange<T>
         return chg;
     }
 
-    public static move<U>(item: U, itemId: string, newIndex: number, oldIndex: number): CollectionChange<U>
+    public static move<U>(item: U, itemId: string, oldIndex: number, newIndex: number): CollectionChange<U>
     {
         var chg = new CollectionChange<U>();
         chg.type = CollectionChangeType.Move;
         chg.item = item;
         chg.itemId = itemId;
-        chg.newIndex = newIndex;
         chg.oldIndex = oldIndex;
+        chg.newIndex = newIndex;
         return chg;
     }
 
@@ -629,8 +629,7 @@ export class DataSource<T> implements IDataSource<T>
             });
         }
         this.items.push(item);
-        var change: CollectionChange<T> = CollectionChange.insert(item, itemId, this.items.length - 1);
-        this.changed.raise(change);
+        this.changed.raise(CollectionChange.insert(item, itemId, this.items.length - 1));
     }
 
     public addRange(items: T[])
@@ -652,7 +651,7 @@ export class DataSource<T> implements IDataSource<T>
         console.assert(newIndex >= 0);
         var item = this.items.splice(oldIndex, 1)[0];
         this.items.splice(newIndex, 0, item);
-        this.changed.raise(CollectionChange.move(item, this.getItemId(item), newIndex, oldIndex));
+        this.changed.raise(CollectionChange.move(item, this.getItemId(item), oldIndex, newIndex));
     }
 
     public get(index: number)
@@ -998,7 +997,7 @@ export class SortView<T> implements IDataSource<T>
                     var removed = this.items.splice(oldIndex, 1);
                     console.assert(removed[0] === event.item);
                     this.items.splice(adjustedNewIndex, 0, event.item);
-                    this.changed.raise(CollectionChange.move<T>(event.item, event.itemId, adjustedNewIndex, oldIndex));
+                    this.changed.raise(CollectionChange.move<T>(event.item, event.itemId, oldIndex, adjustedNewIndex));
                 }
                 break;
             }
@@ -1097,7 +1096,7 @@ export class WindowView<T> implements IDataSource<T>
                 if (wasIn && isIn)
                 {
                     // Move within the window
-                    this.changed.raise(CollectionChange.move(event.item, event.itemId, newWIndex, oldWIndex));
+                    this.changed.raise(CollectionChange.move(event.item, event.itemId, oldWIndex, newWIndex));
                     break;
                 }
 
