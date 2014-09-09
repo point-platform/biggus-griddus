@@ -1101,25 +1101,28 @@ export class WindowView<T> implements IDataSource<T>
                     break;
                 }
 
+                var removeItem: T,
+                    insertItem: T,
+                    removeIndex: number,
+                    insertIndex: number;
+
                 if (wasBefore && isAfter)
                 {
                     // before -> after -- pull everything up one
-                    // TODO would benefit from this.source.getItemAt(index) here
                     var sourceItems = this.source.getAllItems();
-                    var removeItem = sourceItems[this.offset - 1];
-                    var insertItem = sourceItems[this.offset + this.windowSize - 1];
-                    this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), 0));
-                    this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), this.windowSize - 1));
+                    removeItem = sourceItems[this.offset - 1];
+                    insertItem = sourceItems[this.offset + this.windowSize - 1];
+                    removeIndex = 0;
+                    insertIndex = this.windowSize - 1;
                 }
                 else if (wasAfter && isBefore)
                 {
                     // after -> before -- push everything down one
-                    // TODO would benefit from this.source.getItemAt(index) here
                     var sourceItems = this.source.getAllItems();
-                    var removeItem = sourceItems[this.offset + this.windowSize];
-                    var insertItem = sourceItems[this.offset];
-                    this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), this.windowSize - 1));
-                    this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), 0));
+                    removeItem = sourceItems[this.offset + this.windowSize];
+                    insertItem = sourceItems[this.offset];
+                    removeIndex = this.windowSize - 1;
+                    insertIndex = 0;
                 }
                 else if (wasIn)
                 {
@@ -1130,59 +1133,50 @@ export class WindowView<T> implements IDataSource<T>
                     if (isBefore)
                     {
                         // inside -> before
-
-                        // TODO would benefit from this.source.getItemAt(index) here
                         var sourceItems = this.source.getAllItems();
-                        var removeItem = sourceItems[event.newIndex];
-                        var insertItem = sourceItems[this.offset];
-                        this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), oldWIndex));
-                        this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), 0));
+                        removeItem = sourceItems[event.newIndex];
+                        insertItem = sourceItems[this.offset];
+                        removeIndex = oldWIndex;
+                        insertIndex = 0;
                     }
                     else
                     {
                         // inside -> after
-
                         console.assert(isAfter);
-
-                        // TODO would benefit from this.source.getItemAt(index) here
                         var sourceItems = this.source.getAllItems();
-                        var removeItem = sourceItems[event.newIndex];
-                        var insertItem = sourceItems[this.offset + this.windowSize - 1];
-                        this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), oldWIndex));
-                        this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), this.windowSize - 1));
+                        removeItem = sourceItems[event.newIndex];
+                        insertItem = sourceItems[this.offset + this.windowSize - 1];
+                        removeIndex = oldWIndex;
+                        insertIndex = this.windowSize - 1;
                     }
                 }
                 else
                 {
                     // outside -> inside
-
                     console.assert(!wasIn && isIn);
-
                     if (wasBefore)
                     {
                         // before -> inside
-
-                        // TODO would benefit from this.source.getItemAt(index) here
                         var sourceItems = this.source.getAllItems();
-                        var removeItem = sourceItems[this.offset - 1];
-                        var insertItem = sourceItems[event.newIndex];
-                        this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), 0));
-                        this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), newWIndex));
+                        removeItem = sourceItems[this.offset - 1];
+                        insertItem = sourceItems[event.newIndex];
+                        removeIndex = 0;
+                        insertIndex = newWIndex;
                     }
                     else
                     {
                         // after -> inside
-
                         console.assert(wasAfter);
-
-                        // TODO would benefit from this.source.getItemAt(index) here
                         var sourceItems = this.source.getAllItems();
-                        var removeItem = sourceItems[this.offset + this.windowSize];
-                        var insertItem = sourceItems[event.newIndex];
-                        this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), this.windowSize - 1));
-                        this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), newWIndex));
+                        removeItem = sourceItems[this.offset + this.windowSize];
+                        insertItem = sourceItems[event.newIndex];
+                        removeIndex = this.windowSize - 1;
+                        insertIndex = newWIndex;
                     }
                 }
+
+                this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), removeIndex));
+                this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), insertIndex));
 
                 break;
             }
