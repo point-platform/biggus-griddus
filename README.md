@@ -6,7 +6,7 @@ Styling is performed using CSS.
 
 Supports filtering, sorting and virtualisation of large data sets.
 
-Sample code in the [biggus-griddus-example](https://github.com/drewnoakes/biggus-griddus-example) repository.
+View an [online demo](https://drewnoakes.com/biggus-griddus/demo/) ([source](https://github.com/drewnoakes/biggus-griddus-demo))
 
 ---
 
