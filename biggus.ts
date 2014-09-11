@@ -1445,7 +1445,7 @@ export class Grid<TRow>
             e.stopPropagation();
 
             var offset = this.windowSource.getWindowOffset();
-            offset += e.wheelDelta < 0 ? 3 : -3;
+            offset -= e.wheelDelta / 40;
             offset = Math.max(offset, 0);
             offset = Math.min(offset, this.sortSource.getAllItems().length - this.windowSource.getWindowSize());
             this.windowSource.setWindowOffset(offset);
