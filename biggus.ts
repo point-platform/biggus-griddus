@@ -1509,16 +1509,28 @@ export class Grid<TRow>
     {
         this.rowModelById = {};
 
-        // Remove everything except the scroll row
-        while (this.tbody.childElementCount > 1) {
+        var items = this.source.getAllItems(),
+            rowCountBefore = this.tbody.childElementCount - Grid.ScrollRowCount,
+            rowCountAfter = items.length;
+
+        // Remove any extra, unneeded rows from the end
+        for (var i = rowCountAfter; i < rowCountBefore; i++)
             this.tbody.removeChild(this.tbody.lastChild);
+
+        this.scrollCell.rowSpan = rowCountAfter + Grid.ScrollRowCount;
+
+        // Rebind any existing rows
+        for (var i = 0; i < rowCountBefore; i++) {
+            var model = { row: items[i], tr: <HTMLTableRowElement>this.tbody.children[i + Grid.ScrollRowCount] };
+            this.rowModelById[this.source.getItemId(items[i])] = model;
+            this.clearRow(model.tr);
+            this.bindRow(model);
         }
 
-        this.scrollCell.rowSpan = 1;
-
-        var items = this.source.getAllItems();
-        for (var i = 0; i < items.length; i++)
+        // Append any new rows
+        for (var i = rowCountBefore; i < rowCountAfter; i++) {
             this.insertRow(items[i], this.source.getItemId(items[i]), i, false);
+        }
     }
 
     private updateFilter()
