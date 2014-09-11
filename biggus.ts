@@ -1468,6 +1468,51 @@ export class Grid<TRow>
         this.headerRow.appendChild(this.scrollColumnHeader);
         this.filterRow.appendChild(document.createElement('td'));
 
+        // Set the tab index so that we receive key events on the table element
+        this.table.tabIndex = 1;
+        this.table.addEventListener('keydown', e =>
+        {
+            // Don't process keyboard input intended for an input element
+            if (e.target instanceof HTMLInputElement)
+                return;
+
+            var offsetBefore = this.windowSource.getWindowOffset(),
+                newOffset = offsetBefore,
+                maxOffset = Math.max(0, this.windowSource.getUnderlyingItemCount() - this.windowSource.getWindowSize());
+
+            if (e.keyCode === 38) {
+                // UP ARROW
+                newOffset--;
+            } else if (e.keyCode === 40) {
+                // DOWN ARROW
+                newOffset++
+            } else if (e.keyCode === 36) {
+                // HOME
+                newOffset = 0;
+            } else if (e.keyCode === 35) {
+                // END
+                newOffset = maxOffset;
+            } else if (e.keyCode === 33) {
+                // PAGE UP
+                newOffset -= this.windowSource.getWindowSize();
+            } else if (e.keyCode === 34) {
+                // PAGE DOWN
+                newOffset += this.windowSource.getWindowSize();
+            }
+
+            if (newOffset < 0)
+                newOffset = 0;
+            if (newOffset > maxOffset)
+                newOffset = maxOffset;
+
+            if (newOffset === offsetBefore)
+                return;
+
+            this.windowSource.setWindowOffset(newOffset);
+            this.updateScrollbar();
+            e.preventDefault();
+        });
+
         this.filterSource = new FilterView(source, null);
 
         this.sortSource = new SortView(this.filterSource);
