@@ -531,8 +531,9 @@ export class CollectionChange<T>
     public itemId: string;
     public newIndex: number;
     public oldIndex: number;
+    public isNewlyAdded: boolean;
 
-    public static insert<U>(item: U, itemId: string, index: number): CollectionChange<U>
+    public static insert<U>(item: U, itemId: string, index: number, isNewlyAdded: boolean): CollectionChange<U>
     {
         var chg = new CollectionChange<U>();
         chg.type = CollectionChangeType.Insert;
@@ -540,6 +541,7 @@ export class CollectionChange<T>
         chg.itemId = itemId;
         chg.newIndex = index;
         chg.oldIndex = -1;
+        chg.isNewlyAdded = isNewlyAdded;
         return chg;
     }
 
@@ -629,7 +631,7 @@ export class DataSource<T> implements IDataSource<T>
             });
         }
         this.items.push(item);
-        this.changed.raise(CollectionChange.insert(item, itemId, this.items.length - 1));
+        this.changed.raise(CollectionChange.insert(item, itemId, this.items.length - 1, true));
     }
 
     public addRange(items: T[])
@@ -703,7 +705,7 @@ export class FilterView<T> implements IDataSource<T>
                 console.assert(typeof(this.itemFilterState[event.itemId]) === 'undefined');
                 this.itemFilterState[event.itemId] = passesFilter;
                 if (passesFilter)
-                    this.append(event.item, event.itemId);
+                    this.append(event.item, event.itemId, event.isNewlyAdded);
                 break;
             }
             case CollectionChangeType.Remove:
@@ -733,7 +735,7 @@ export class FilterView<T> implements IDataSource<T>
 
                 if (!priorState) {
                     // Newly passes the filter -- add
-                    this.append(event.item, event.itemId);
+                    this.append(event.item, event.itemId, false);
                 } else {
                     // Newly fails the filter -- remove
                     this.remove(event.item, event.itemId);
@@ -788,16 +790,16 @@ export class FilterView<T> implements IDataSource<T>
                 continue;
             this.itemFilterState[itemId] = passesFilter;
             if (passesFilter)
-                this.append(item, itemId);
+                this.append(item, itemId, false);
             else
                 this.remove(item, itemId)
         }
     }
 
-    private append(item: T, itemId: string): void
+    private append(item: T, itemId: string, isNewlyAdded: boolean): void
     {
         this.items.push(item);
-        this.changed.raise(CollectionChange.insert(item, itemId, this.items.length - 1));
+        this.changed.raise(CollectionChange.insert(item, itemId, this.items.length - 1, isNewlyAdded));
     }
 
     private remove(item: T, itemId: string): void
@@ -963,7 +965,7 @@ export class SortView<T> implements IDataSource<T>
                     ? findInsertionIndex(this.items, event.item, this.sortDirection, (a, b) => compare(this.sortColumn.getSortValue(a), this.sortColumn.getSortValue(b)))
                     : this.items.length;
                 this.items.splice(insertIndex, 0, event.item);
-                this.changed.raise(CollectionChange.insert<T>(event.item, event.itemId, insertIndex));
+                this.changed.raise(CollectionChange.insert<T>(event.item, event.itemId, insertIndex, event.isNewlyAdded));
                 break;
             }
             case CollectionChangeType.Remove:
@@ -1061,7 +1063,7 @@ export class WindowView<T> implements IDataSource<T>
             {
                 var windowIndex = this.toWindowIndex(event.newIndex);
                 if (this.isValidWindowIndex(windowIndex))
-                    this.insert(event.item, event.itemId, windowIndex);
+                    this.insert(event.item, event.itemId, windowIndex, event.isNewlyAdded);
                 break;
             }
             case CollectionChangeType.Remove:
@@ -1162,7 +1164,7 @@ export class WindowView<T> implements IDataSource<T>
                 }
 
                 this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), removeIndex));
-                this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), insertIndex));
+                this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), insertIndex, false));
 
                 break;
             }
@@ -1184,11 +1186,11 @@ export class WindowView<T> implements IDataSource<T>
         if (this.offset + this.windowSize <= sourceItems.length)
         {
             var appendItem = sourceItems[this.offset + this.windowSize - 1];
-            this.changed.raise(CollectionChange.insert(appendItem, this.getItemId(appendItem), this.windowSize - 1));
+            this.changed.raise(CollectionChange.insert(appendItem, this.getItemId(appendItem), this.windowSize - 1, false));
         }
     }
 
-    private insert(item: T, itemId: string, windowIndex: number)
+    private insert(item: T, itemId: string, windowIndex: number, isNewlyAdded: boolean)
     {
         var sourceItems = this.source.getAllItems();
 
@@ -1199,7 +1201,7 @@ export class WindowView<T> implements IDataSource<T>
             this.changed.raise(CollectionChange.remove(removeItem, this.getItemId(removeItem), this.windowSize - 1));
         }
 
-        this.changed.raise(CollectionChange.insert(item, itemId, windowIndex));
+        this.changed.raise(CollectionChange.insert(item, itemId, windowIndex, isNewlyAdded));
     }
 
     private isValidWindowIndex(windowIndex: number)
@@ -1244,7 +1246,7 @@ export class WindowView<T> implements IDataSource<T>
                 if (sourceIndex < 0 || sourceIndex >= items.length)
                     continue;
                 var item = items[sourceIndex];
-                this.changed.raise(CollectionChange.insert(item, this.getItemId(item), this.windowSize - diff + i));
+                this.changed.raise(CollectionChange.insert(item, this.getItemId(item), this.windowSize - diff + i, false));
             }
         }
         else
@@ -1266,7 +1268,7 @@ export class WindowView<T> implements IDataSource<T>
                 if (sourceIndex >= 0 && sourceIndex < items.length)
                 {
                     item = items[sourceIndex];
-                    this.changed.raise(CollectionChange.insert(item, this.getItemId(item), 0));
+                    this.changed.raise(CollectionChange.insert(item, this.getItemId(item), 0, false));
                 }
             }
         }
@@ -1292,7 +1294,7 @@ export class WindowView<T> implements IDataSource<T>
                 if (sourceIndex < 0 || sourceIndex >= items.length)
                     continue;
                 var item = items[sourceIndex];
-                this.changed.raise(CollectionChange.insert(item, this.getItemId(item), i));
+                this.changed.raise(CollectionChange.insert(item, this.getItemId(item), i, false));
             }
         }
         else
@@ -1564,7 +1566,7 @@ export class Grid<TRow>
         {
             case CollectionChangeType.Insert:
             {
-                this.insertRow(event.item, event.itemId, event.newIndex, true);
+                this.insertRow(event.item, event.itemId, event.newIndex, event.isNewlyAdded);
                 break;
             }
             case CollectionChangeType.Remove:

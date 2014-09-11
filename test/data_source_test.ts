@@ -22,7 +22,7 @@ describe("data source", () =>
             source.changed.collect(events =>
             {
                 source.add("A");
-                expect(events).toEqual([biggus.CollectionChange.insert("A", "A", 0)]);
+                expect(events).toEqual([biggus.CollectionChange.insert("A", "A", 0, true)]);
             });
 
             expect(source.getAllItems()).toEqual(["A"]);
@@ -30,7 +30,7 @@ describe("data source", () =>
             source.changed.collect(events =>
             {
                 source.add("B");
-                expect(events).toEqual([biggus.CollectionChange.insert("B", "B", 1)]);
+                expect(events).toEqual([biggus.CollectionChange.insert("B", "B", 1, true)]);
             });
 
             expect(source.getAllItems()).toEqual(["A", "B"]);
@@ -39,9 +39,9 @@ describe("data source", () =>
             {
                 source.addRange(["1", "2", "3"]);
                 expect(events).toEqual([
-                    biggus.CollectionChange.insert("1", "1", 2),
-                    biggus.CollectionChange.insert("2", "2", 3),
-                    biggus.CollectionChange.insert("3", "3", 4)
+                    biggus.CollectionChange.insert("1", "1", 2, true),
+                    biggus.CollectionChange.insert("2", "2", 3, true),
+                    biggus.CollectionChange.insert("3", "3", 4, true)
                 ]);
             });
 
