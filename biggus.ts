@@ -1336,6 +1336,8 @@ export class Grid<TRow>
     private scrollOuter: HTMLDivElement;
     private scrollInner: HTMLDivElement;
 
+    private static ScrollRowCount = 1;
+
     constructor(source: IDataSource<TRow>, public table: HTMLTableElement, public options: IGridOptions<TRow>)
     {
         //
@@ -1493,7 +1495,7 @@ export class Grid<TRow>
         // Calculate the target number of rows
         var rowCount = this.windowSource.getAllItems().length;
 
-        this.scrollCell.rowSpan = rowCount + 1;
+        this.scrollCell.rowSpan = rowCount + Grid.ScrollRowCount;
 
         var heightScale = this.windowSource.getUnderlyingItemCount() / rowCount;
         var height = this.tbody.clientHeight * heightScale;
@@ -1597,10 +1599,10 @@ export class Grid<TRow>
         this.bindRow(rowModel);
 
         // We need to add one here to account for the scrollbar row
-        if (index === this.tbody.childElementCount + 1)
+        if (index === this.tbody.childElementCount + Grid.ScrollRowCount)
             this.tbody.appendChild(tr);
         else
-            this.tbody.insertBefore(tr, this.tbody.children[index + 1]);
+            this.tbody.insertBefore(tr, this.tbody.children[index + Grid.ScrollRowCount]);
 
         this.scrollCell.rowSpan++;
 
@@ -1624,16 +1626,16 @@ export class Grid<TRow>
         console.assert(oldIndex !== newIndex);
 
         // Add one to skip over the scroll row
-        var tr = <HTMLTableRowElement>this.tbody.children[oldIndex + 1];
+        var tr = <HTMLTableRowElement>this.tbody.children[oldIndex + Grid.ScrollRowCount];
 
-        if (newIndex === this.tbody.childElementCount + 1)
+        if (newIndex === this.tbody.childElementCount + Grid.ScrollRowCount)
         {
             this.tbody.appendChild(tr);
         }
         else
         {
             var adjustedNewIndex = oldIndex < newIndex ? newIndex + 1 : newIndex;
-            this.tbody.insertBefore(tr, this.tbody.children[adjustedNewIndex + 1]);
+            this.tbody.insertBefore(tr, this.tbody.children[adjustedNewIndex + Grid.ScrollRowCount]);
         }
 
         if (oldIndex === 0 || newIndex === 0)
