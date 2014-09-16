@@ -1448,8 +1448,8 @@ export class Grid<TRow>
 
             var offset = this.windowSource.getWindowOffset();
             offset -= e.wheelDelta / 40;
-            offset = Math.max(offset, 0);
             offset = Math.min(offset, this.sortSource.getAllItems().length - this.windowSource.getWindowSize());
+            offset = Math.max(offset, 0);
             this.windowSource.setWindowOffset(offset);
 
             this.updateScrollbar();
