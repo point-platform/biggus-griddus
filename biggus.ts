@@ -517,10 +517,15 @@ export function mixinNotifyChange(obj: any)
 
 export enum CollectionChangeType
 {
+    /** An item is to be inserted at the specified position. */
     Insert = 0,
+    /** An item's value has changed, and it should be updated in place. Neither position nor ID change. */
     Update = 1,
+    /** An item is to be removed at the specified position. */
     Remove = 2,
+    /** An item is to be moved to a new position. It should also be refreshed as its value has changed. */
     Move = 3,
+    /** Considerable changes to the collection have occurred and clients should rebuild their views. */
     Reset = 4
 }
 
