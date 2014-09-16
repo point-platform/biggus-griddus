@@ -1744,7 +1744,7 @@ export class Grid<TRow>
     /** Clears all state from a tr element and all child td elements. */
     private clearRow(tr: HTMLTableRowElement): void
     {
-        tr.className = null;
+        tr.removeAttribute('class');
 
         for (var c = 0; c < this.options.columns.length; c++)
         {
