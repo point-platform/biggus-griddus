@@ -63,11 +63,8 @@ describe("filter view", () =>
             filterView.setPredicate(s => s.length < 3);
 
             expect(events.length).toEqual(2);
-
-            expect(events[0].oldIndex).toEqual(2);
-            expect(events[1].oldIndex).toEqual(4);
-            expect(events[0].item).toEqual("CCC");
-            expect(events[1].item).toEqual("FFF");
+            expect(events[0]).toEqual(biggus.CollectionChange.remove("CCC", "CCC", 2));
+            expect(events[1]).toEqual(biggus.CollectionChange.remove("FFF", "FFF", 4));
 
             expect(filterView.getAllItems()).toEqual(["A", "BB", "D", "EE"]);
         });
@@ -91,11 +88,8 @@ describe("filter view", () =>
             filterView.setPredicate(null);
 
             expect(events.length).toEqual(2);
-
-            expect(events[0].newIndex).toEqual(4);
-            expect(events[1].newIndex).toEqual(5);
-            expect(events[0].item).toEqual("CCC");
-            expect(events[1].item).toEqual("FFF");
+            expect(events[0]).toEqual(biggus.CollectionChange.insert("CCC", "CCC", 4, false));
+            expect(events[1]).toEqual(biggus.CollectionChange.insert("FFF", "FFF", 5, false));
         });
     });
 

@@ -526,7 +526,9 @@ export enum CollectionChangeType
     /** An item is to be moved to a new position. It should also be refreshed as its value has changed. */
     Move = 3,
     /** Considerable changes to the collection have occurred and clients should rebuild their views. */
-    Reset = 4
+    Reset = 4,
+    /** An item in the collection is being replaced with another. ID changes and position may as well. */
+    Replace = 5
 }
 
 export class CollectionChange<T>
@@ -535,6 +537,8 @@ export class CollectionChange<T>
     public item: T;
     public itemId: string;
     public newIndex: number;
+    public oldItem: T;
+    public oldItemId: string;
     public oldIndex: number;
     public isNewlyAdded: boolean;
 
@@ -558,6 +562,19 @@ export class CollectionChange<T>
         chg.itemId = itemId;
         chg.newIndex = -1;
         chg.oldIndex = index;
+        return chg;
+    }
+
+    public static replace<U>(oldItem: U, oldItemId: string, oldIndex: number, newItem: U, newItemId: string, newIndex: number, isNewlyAdded: boolean): CollectionChange<U>
+    {
+        var chg = new CollectionChange<U>();
+        chg.type = CollectionChangeType.Replace;
+        chg.item = newItem;
+        chg.itemId = newItemId;
+        chg.newIndex = newIndex;
+        chg.oldItem = oldItem;
+        chg.oldItemId = oldItemId;
+        chg.oldIndex = oldIndex;
         return chg;
     }
 
@@ -1168,8 +1185,9 @@ export class WindowView<T> implements IDataSource<T>
                     }
                 }
 
-                this.changed.raise(CollectionChange.remove(removeItem, this.source.getItemId(removeItem), removeIndex));
-                this.changed.raise(CollectionChange.insert(insertItem, this.source.getItemId(insertItem), insertIndex, false));
+                this.changed.raise(CollectionChange.replace(
+                    removeItem, this.source.getItemId(removeItem), removeIndex,
+                    insertItem, this.source.getItemId(insertItem), insertIndex, false));
 
                 break;
             }
@@ -1183,15 +1201,19 @@ export class WindowView<T> implements IDataSource<T>
 
     private remove(item: T, itemId: string, windowIndex: number)
     {
-        this.changed.raise(CollectionChange.remove(item, itemId, windowIndex));
-
-        // If enough items exist after the window, slurp one in
         var sourceItems = this.source.getAllItems();
 
+        // If enough items exist after the window, slurp one in
         if (this.offset + this.windowSize <= sourceItems.length)
         {
             var appendItem = sourceItems[this.offset + this.windowSize - 1];
-            this.changed.raise(CollectionChange.insert(appendItem, this.getItemId(appendItem), this.windowSize - 1, false));
+            this.changed.raise(CollectionChange.replace(
+                item, itemId, windowIndex,
+                appendItem, this.getItemId(appendItem), this.windowSize - 1, false));
+        }
+        else
+        {
+            this.changed.raise(CollectionChange.remove(item, itemId, windowIndex));
         }
     }
 
@@ -1203,10 +1225,14 @@ export class WindowView<T> implements IDataSource<T>
         if (this.offset + this.windowSize < sourceItems.length)
         {
             var removeItem = sourceItems[this.offset + this.windowSize];
-            this.changed.raise(CollectionChange.remove(removeItem, this.getItemId(removeItem), this.windowSize - 1));
+            this.changed.raise(CollectionChange.replace(
+                removeItem, this.getItemId(removeItem), this.windowSize - 1,
+                item, itemId, windowIndex, isNewlyAdded));
         }
-
-        this.changed.raise(CollectionChange.insert(item, itemId, windowIndex, isNewlyAdded));
+        else
+        {
+            this.changed.raise(CollectionChange.insert(item, itemId, windowIndex, isNewlyAdded));
+        }
     }
 
     private isValidWindowIndex(windowIndex: number)
@@ -1235,23 +1261,32 @@ export class WindowView<T> implements IDataSource<T>
         else if (diff > 0)
         {
             // Scrolling 'down'.
-            // Remove from top
             for (var i = 0; i < diff; i++)
             {
-                var sourceIndex = oldOffset + i;
-                if (sourceIndex < 0 || sourceIndex >= items.length)
-                    continue;
-                var item = items[sourceIndex];
-                this.changed.raise(CollectionChange.remove(item, this.getItemId(item), 0));
-            }
-            // Introduce at bottom (if available)
-            for (var i = 0; i < diff; i++)
-            {
-                var sourceIndex = oldOffset + this.windowSize + i;
-                if (sourceIndex < 0 || sourceIndex >= items.length)
-                    continue;
-                var item = items[sourceIndex];
-                this.changed.raise(CollectionChange.insert(item, this.getItemId(item), this.windowSize - diff + i, false));
+                // Remove from top and introduce at bottom (if available)
+                var removeIndex = oldOffset + i,
+                    insertIndex = oldOffset + this.windowSize + i,
+                    validRemove = removeIndex >= 0 && removeIndex < items.length,
+                    validInsert = insertIndex >= 0 && insertIndex < items.length;
+
+                console.assert(validRemove || !validInsert);
+
+                if (validRemove)
+                {
+                    var removeItem = items[removeIndex],
+                        insertItem = items[insertIndex];
+
+                    if (validInsert)
+                    {
+                        this.changed.raise(CollectionChange.replace(
+                            removeItem, this.getItemId(removeItem), 0,
+                            insertItem, this.getItemId(insertItem), this.windowSize - diff + i, false));
+                    }
+                    else
+                    {
+                        this.changed.raise(CollectionChange.remove(removeItem, this.getItemId(removeItem), 0));
+                    }
+                }
             }
         }
         else
@@ -1259,21 +1294,31 @@ export class WindowView<T> implements IDataSource<T>
             // Scrolling 'up'.
             diff = -diff;
 
-            for (var i = diff - 1; i >= 0; i--) {
-                // Remove from bottom
-                var sourceIndex = this.offset + this.windowSize + i;
-                if (sourceIndex >= 0 && sourceIndex < items.length)
-                {
-                    var item = items[sourceIndex];
-                    this.changed.raise(CollectionChange.remove(item, this.getItemId(item), this.windowSize - 1));
-                }
+            for (var i = diff - 1; i >= 0; i--)
+            {
+                // Remove from bottom and introduce at top
+                var removeIndex = this.offset + this.windowSize + i,
+                    insertIndex = this.offset + i,
+                    validRemove = removeIndex >= 0 && removeIndex < items.length,
+                    validInsert = insertIndex >= 0 && insertIndex < items.length;
 
-                // Introduce at top
-                sourceIndex = this.offset + i;
-                if (sourceIndex >= 0 && sourceIndex < items.length)
+                console.assert(!validRemove || validInsert);
+
+                if (validInsert)
                 {
-                    item = items[sourceIndex];
-                    this.changed.raise(CollectionChange.insert(item, this.getItemId(item), 0, false));
+                    var removeItem = items[removeIndex],
+                        insertItem = items[insertIndex];
+
+                    if (validRemove)
+                    {
+                        this.changed.raise(CollectionChange.replace(
+                            removeItem, this.getItemId(removeItem), this.windowSize - 1,
+                            insertItem, this.getItemId(insertItem), 0, false));
+                    }
+                    else
+                    {
+                        this.changed.raise(CollectionChange.insert(insertItem, this.getItemId(insertItem), 0, false));
+                    }
                 }
             }
         }
@@ -1635,12 +1680,32 @@ export class Grid<TRow>
                 this.updateRow(event.itemId);
                 break;
             }
+            case CollectionChangeType.Replace:
+            {
+                console.assert(typeof(this.rowModelById[event.itemId]) === "undefined", "New row should NOT have a row model");
+                this.replace(event.oldItemId, event.itemId, event.item, event.oldIndex, event.newIndex, event.isNewlyAdded);
+                break;
+            }
             case CollectionChangeType.Reset:
             {
                 this.reset();
                 break;
             }
         }
+    }
+
+    private replace(oldItemId: string, newItemId: string, newItem: TRow, oldIndex: number, newIndex: number, isNewlyAdded: boolean)
+    {
+        var oldRowModel = this.rowModelById[oldItemId];
+        console.assert(typeof(oldRowModel) !== "undefined", "Old row should have a row model");
+        this.clearRow(oldRowModel.tr);
+        delete this.rowModelById[oldItemId];
+        var newRowModel = {tr: oldRowModel.tr, row: newItem};
+        this.rowModelById[newItemId] = newRowModel;
+        this.bindRow(newRowModel);
+        this.insertRowAt(oldIndex < newIndex ? newIndex + 1 : newIndex, newRowModel.tr);
+        if (isNewlyAdded)
+            this.flashRow(newRowModel.tr);
     }
 
     private removeRow(item: TRow, itemId: string)
@@ -1661,19 +1726,22 @@ export class Grid<TRow>
         var rowModel = {row: item, tr: tr};
         this.rowModelById[itemId] = rowModel;
         this.bindRow(rowModel);
-
-        // We need to add one here to account for the scrollbar row
-        if (index === this.tbody.childElementCount + Grid.ScrollRowCount)
-            this.tbody.appendChild(tr);
-        else
-            this.tbody.insertBefore(tr, this.tbody.children[index + Grid.ScrollRowCount]);
-
+        this.insertRowAt(index, tr);
         this.scrollCell.rowSpan++;
 
         if (flash)
             this.flashRow(tr);
 
         this.updateScrollbar();
+    }
+
+    private insertRowAt(index, tr)
+    {
+        // We need to take the scrollbar row into account here
+        if (index === this.tbody.childElementCount - Grid.ScrollRowCount)
+            this.tbody.appendChild(tr);
+        else
+            this.tbody.insertBefore(tr, this.tbody.children[index + Grid.ScrollRowCount]);
     }
 
     private updateRow(itemId: string)
