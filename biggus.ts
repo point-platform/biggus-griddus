@@ -1634,10 +1634,12 @@ export class Grid<TRow>
         for (var i = rowCountAfter; i < rowCountBefore; i++)
             this.tbody.removeChild(this.tbody.lastChild);
 
-        this.scrollCell.rowSpan = rowCountAfter + Grid.ScrollRowCount;
+        var reuseCount = Math.min(rowCountBefore, rowCountAfter);
+
+        this.scrollCell.rowSpan = reuseCount + Grid.ScrollRowCount;
 
         // Rebind any existing rows
-        for (var i = 0; i < rowCountBefore; i++) {
+        for (var i = 0; i < reuseCount; i++) {
             var model = { row: items[i], tr: <HTMLTableRowElement>this.tbody.children[i + Grid.ScrollRowCount] };
             this.rowModelById[this.source.getItemId(items[i])] = model;
             this.clearRow(model.tr);
@@ -1645,7 +1647,7 @@ export class Grid<TRow>
         }
 
         // Append any new rows
-        for (var i = rowCountBefore; i < rowCountAfter; i++) {
+        for (var i = reuseCount; i < rowCountAfter; i++) {
             this.insertRow(items[i], this.source.getItemId(items[i]), i, false);
         }
     }
