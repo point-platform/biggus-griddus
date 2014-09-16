@@ -710,6 +710,12 @@ export class DataSource<T> implements IDataSource<T>
     {
         this.changed.raise(CollectionChange.reset<T>());
     }
+
+    public clear()
+    {
+        this.items = [];
+        this.reset();
+    }
 }
 
 export class FilterView<T> implements IDataSource<T>
