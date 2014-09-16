@@ -27,17 +27,23 @@ describe("window view", () =>
         {
             var windowSize = 3;
 
+            console.assert(sourceItems.length > windowSize);
+
             windowView.setWindowSize(windowSize);
 
             windowView.changed.collect(events =>
             {
                 source.addRange(sourceItems);
 
-                expect(events.length).toEqual(windowSize);
+                expect(events.length).toEqual(sourceItems.length);
 
                 for (var i = 0; i < windowSize; i++)
                     expect(events[i])
                         .toEqual(biggus.CollectionChange.insert(sourceItems[i], sourceItems[i], i, true));
+
+                for (var i = windowSize; i < sourceItems.length; i++)
+                    expect(events[i])
+                        .toEqual(biggus.CollectionChange.scroll<string>());
             });
 
             expect(windowView.getAllItems()).toEqual(["A", "B", "C"]);
@@ -106,7 +112,7 @@ describe("window view", () =>
             {
                 source.removeAt(5);
 
-                expect(events).toEqual([]);
+                expect(events).toEqual([biggus.CollectionChange.scroll<string>()]);
             });
 
             expect(windowView.getWindowOffset()).toEqual(2);
@@ -121,7 +127,7 @@ describe("window view", () =>
                 source.removeAt(0);
 
                 // Window appears same, but has shifted up one unit relative to the source (offset decremented)
-                expect(events).toEqual([]);
+                expect(events).toEqual([biggus.CollectionChange.scroll<string>()]);
                 expect(windowView.getWindowOffset()).toEqual(1);
             });
         });

@@ -528,7 +528,9 @@ export enum CollectionChangeType
     /** Considerable changes to the collection have occurred and clients should rebuild their views. */
     Reset = 4,
     /** An item in the collection is being replaced with another. ID changes and position may as well. */
-    Replace = 5
+    Replace = 5,
+    /** The collection has changed outside the viewable window in a way that effects scroll position. */
+    Scroll = 6
 }
 
 export class CollectionChange<T>
@@ -604,6 +606,17 @@ export class CollectionChange<T>
     {
         var chg = new CollectionChange<U>();
         chg.type = CollectionChangeType.Reset;
+        chg.item = null;
+        chg.itemId = null;
+        chg.newIndex = -1;
+        chg.oldIndex = -1;
+        return chg;
+    }
+
+    public static scroll<U>() : CollectionChange<U>
+    {
+        var chg = new CollectionChange<U>();
+        chg.type = CollectionChangeType.Scroll;
         chg.item = null;
         chg.itemId = null;
         chg.newIndex = -1;
@@ -1086,6 +1099,8 @@ export class WindowView<T> implements IDataSource<T>
                 var windowIndex = this.toWindowIndex(event.newIndex);
                 if (this.isValidWindowIndex(windowIndex))
                     this.insert(event.item, event.itemId, windowIndex, event.isNewlyAdded);
+                else
+                    this.changed.raise(CollectionChange.scroll<T>());
                 break;
             }
             case CollectionChangeType.Remove:
@@ -1093,8 +1108,12 @@ export class WindowView<T> implements IDataSource<T>
                 var windowIndex = this.toWindowIndex(event.oldIndex);
                 if (this.isValidWindowIndex(windowIndex))
                     this.remove(event.item, event.itemId, windowIndex);
-                else if (windowIndex < 0)
-                    this.offset--;
+                else
+                {
+                    if (windowIndex < 0)
+                        this.offset--;
+                    this.changed.raise(CollectionChange.scroll<T>());
+                }
                 break;
             }
             case CollectionChangeType.Update:
@@ -1689,6 +1708,11 @@ export class Grid<TRow>
             case CollectionChangeType.Reset:
             {
                 this.reset();
+                break;
+            }
+            case CollectionChangeType.Scroll:
+            {
+                this.updateScrollbar();
                 break;
             }
         }
