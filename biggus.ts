@@ -1503,6 +1503,7 @@ export class Grid<TRow>
         this.scrollCell.appendChild(this.scrollOuter);
         this.scrollOuter.appendChild(this.scrollInner);
         var scrollRow = document.createElement('tr');
+        scrollRow.className = 'scroll';
         var scrollVoidCell = document.createElement('td');
         scrollVoidCell.colSpan = this.options.columns.length;
         scrollRow.appendChild(scrollVoidCell);
