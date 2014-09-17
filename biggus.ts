@@ -1611,16 +1611,6 @@ export class Grid<TRow>
         this.reset();
     }
 
-    public setWindowSize(size: number)
-    {
-        this.windowSource.setWindowSize(size);
-    }
-
-    public setWindowOffset(offset: number)
-    {
-        this.windowSource.setWindowOffset(offset);
-    }
-
     private updateScrollbar()
     {
         var bodyHeight = this.tbody.clientHeight,
