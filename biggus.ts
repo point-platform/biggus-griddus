@@ -1240,6 +1240,7 @@ export class WindowView<T> implements IDataSource<T>
         {
             this.changed.raise(CollectionChange.remove(item, itemId, windowIndex));
         }
+        this.changed.raise(CollectionChange.scroll<T>());
     }
 
     private insert(item: T, itemId: string, windowIndex: number, isNewlyAdded: boolean)
@@ -1258,6 +1259,7 @@ export class WindowView<T> implements IDataSource<T>
         {
             this.changed.raise(CollectionChange.insert(item, itemId, windowIndex, isNewlyAdded));
         }
+        this.changed.raise(CollectionChange.scroll<T>());
     }
 
     private isValidWindowIndex(windowIndex: number)
@@ -1282,6 +1284,7 @@ export class WindowView<T> implements IDataSource<T>
         {
             // Enough has changed that it's less work for clients to just reset
             this.changed.raise(CollectionChange.reset<T>());
+            this.changed.raise(CollectionChange.scroll<T>());
         }
         else if (diff > 0)
         {
@@ -1313,6 +1316,7 @@ export class WindowView<T> implements IDataSource<T>
                     }
                 }
             }
+            this.changed.raise(CollectionChange.scroll<T>());
         }
         else
         {
@@ -1346,6 +1350,7 @@ export class WindowView<T> implements IDataSource<T>
                     }
                 }
             }
+            this.changed.raise(CollectionChange.scroll<T>());
         }
     }
 
@@ -1371,6 +1376,7 @@ export class WindowView<T> implements IDataSource<T>
                 var item = items[sourceIndex];
                 this.changed.raise(CollectionChange.insert(item, this.getItemId(item), i, false));
             }
+            this.changed.raise(CollectionChange.scroll<T>());
         }
         else
         {
@@ -1382,6 +1388,7 @@ export class WindowView<T> implements IDataSource<T>
                 var item = items[sourceIndex];
                 this.changed.raise(CollectionChange.remove(item, this.getItemId(item), i));
             }
+            this.changed.raise(CollectionChange.scroll<T>());
         }
     }
 
@@ -1528,8 +1535,6 @@ export class Grid<TRow>
             offset = Math.max(offset, 0);
             this.windowSource.setWindowOffset(offset);
 
-            this.updateScrollbar();
-
             return false;
         });
 
@@ -1585,7 +1590,6 @@ export class Grid<TRow>
                 return;
 
             this.windowSource.setWindowOffset(newOffset);
-            this.updateScrollbar();
             e.preventDefault();
         });
 
@@ -1598,34 +1602,74 @@ export class Grid<TRow>
         this.source = this.windowSource;
         this.source.changed.subscribe(this.onSourceChanged.bind(this));
 
+        // TODO need a way of detaching this listener -- potential memory leak
+        window.addEventListener('resize', e =>
+        {
+            this.updateScrollbar();
+        });
+
         this.reset();
     }
 
     public setWindowSize(size: number)
     {
         this.windowSource.setWindowSize(size);
-        this.updateScrollbar();
     }
 
     public setWindowOffset(offset: number)
     {
         this.windowSource.setWindowOffset(offset);
-        this.updateScrollbar();
     }
 
     private updateScrollbar()
     {
+        var bodyHeight = this.tbody.clientHeight,
+            headHeight = this.thead.clientHeight,
+            availableHeight = (this.table.parentElement.clientHeight - headHeight);
+
         // Calculate the target number of rows
         var rowCount = this.windowSource.getAllItems().length;
 
         this.scrollCell.rowSpan = rowCount + Grid.ScrollRowCount;
 
         var heightScale = this.windowSource.getUnderlyingItemCount() / rowCount;
-        var height = this.tbody.clientHeight * heightScale;
+        var height = bodyHeight * heightScale;
         this.scrollInner.style.height = height + 'px';
 
         var startRatio = this.windowSource.getWindowOffset() / this.windowSource.getUnderlyingItemCount();
         this.scrollOuter.scrollTop = height * startRatio;
+
+        this.scrollOuter.style.height = availableHeight + 'px';
+
+        var bodyRowCount = this.tbody.childElementCount - Grid.ScrollRowCount;
+        if (bodyHeight > availableHeight)
+        {
+            // Remove extra rows
+            var removeCount = 0;
+            while (true)
+            {
+                var row = <HTMLTableRowElement>this.tbody.children[this.tbody.childElementCount - 1 - removeCount];
+                if (!row || row.offsetTop - headHeight < availableHeight)
+                    break;
+                removeCount++;
+            }
+
+            if (removeCount !== 0)
+            {
+                var windowSize = this.windowSource.getWindowSize();
+                this.windowSource.setWindowSize(Math.max(0, windowSize - removeCount));
+            }
+        }
+        else if (bodyHeight < availableHeight)
+        {
+            // Add extra rows to fill space
+            var avgRowHeight = bodyHeight === 0
+                ? 20 // we don't have any existing rows to measure, so just assume a height of 20px -- it will adjust in the next pass
+                : bodyHeight / bodyRowCount;
+
+            console.assert(avgRowHeight !== 0 && !isNaN(avgRowHeight) && isFinite(avgRowHeight));
+            this.windowSource.setWindowSize(Math.ceil(availableHeight / avgRowHeight));
+        }
     }
 
     private reset()
@@ -1764,8 +1808,6 @@ export class Grid<TRow>
 
         if (flash)
             this.flashRow(tr);
-
-        this.updateScrollbar();
     }
 
     private insertRowAt(index, tr)
@@ -1802,9 +1844,6 @@ export class Grid<TRow>
             var adjustedNewIndex = oldIndex < newIndex ? newIndex + 1 : newIndex;
             this.tbody.insertBefore(tr, this.tbody.children[adjustedNewIndex + Grid.ScrollRowCount]);
         }
-
-        if (oldIndex === 0 || newIndex === 0)
-            this.updateScrollbar();
     }
 
     private flashRow(tr: HTMLTableRowElement)
