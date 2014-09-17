@@ -325,21 +325,24 @@ describe("window view", () =>
     {
         it("handles increase", () =>
         {
-            source.addRange(sourceItems);
+            source.addRange(["A", "B", "C", "D", "E", "F", "G"]);
 
             windowView.setWindowOffset(0);
-            windowView.setWindowSize(3);
+            windowView.setWindowSize(5);
+
+            expect(windowView.getAllItems()).toEqual(["A", "B", "C", "D", "E"]);
 
             windowView.changed.collect(events =>
             {
-                windowView.setWindowOffset(1);
+                windowView.setWindowOffset(2);
 
                 expect(events).toEqual([
-                    biggus.CollectionChange.replace("A", "A", 0, "D", "D", 2, false)
+                    biggus.CollectionChange.replace("A", "A", 0, "F", "F", 4, false),
+                    biggus.CollectionChange.replace("B", "B", 0, "G", "G", 4, false)
                 ]);
             });
 
-            expect(windowView.getAllItems()).toEqual(["B", "C", "D"]);
+            expect(windowView.getAllItems()).toEqual(["C", "D", "E", "F", "G"]);
         });
 
         it("handles decrease", () =>

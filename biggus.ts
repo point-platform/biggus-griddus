@@ -1305,7 +1305,7 @@ export class WindowView<T> implements IDataSource<T>
                     {
                         this.changed.raise(CollectionChange.replace(
                             removeItem, this.getItemId(removeItem), 0,
-                            insertItem, this.getItemId(insertItem), this.windowSize - diff + i, false));
+                            insertItem, this.getItemId(insertItem), this.windowSize - 1, false));
                     }
                     else
                     {
