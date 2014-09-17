@@ -1,0 +1,123 @@
+/******* GRID *******/
+
+table.biggus
+{
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    outline: none;
+}
+
+/* In order to accept key-presses, the table is focusable. Disable the outline this causes. */
+table.biggus:active { outline: none; }
+
+/******* HEADER *******/
+
+table.biggus thead tr.header th
+{
+    background: #444;
+    color: #fff;
+    text-align: left;
+    padding: 1em 0.5em 0;
+}
+
+table.biggus thead tr.header th.scroll
+{
+    width: 16px;
+    padding: 0;
+    margin: 0;
+}
+
+table.biggus thead tr.filter
+{
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+table.biggus thead tr.filter td
+{
+    background: #666;
+    padding: 0 1px 2px 2px;
+}
+
+table.biggus thead tr.filter td input
+{
+    margin: 0;
+    border: 0;
+    background: rgba(255, 255, 255, 0.35);
+    width: 100%;
+    height: 100%;
+    padding: 0 5px;
+    box-sizing: border-box;
+}
+
+table.biggus thead th.sort-ascending::after  { content: "\f077"; font-family: FontAwesome; margin-left: 5px; color: #bbb; }
+table.biggus thead th.sort-descending::after { content: "\f078"; font-family: FontAwesome; margin-left: 5px; color: #bbb; }
+
+table.biggus tbody td
+{
+    padding: 0 0.5em;
+}
+
+table.biggus tbody td.action.button
+{
+    width: 50px;
+    padding: 1px;
+}
+
+table.biggus tbody td.action.button button
+{
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+table.biggus tbody tr
+{
+    background-color: transparent;
+    transition: background-color 600ms linear;
+}
+
+table.biggus th.numeric,
+table.biggus td.numeric { text-align: right; }
+
+table.biggus th.centered,
+table.biggus td.centered { text-align: center; }
+
+
+table.biggus thead th.sortable
+{
+    cursor: pointer;
+}
+
+/******* SCROLLING *******/
+
+table.biggus tbody td.scroll
+{
+    position: relative;
+}
+
+table.biggus tbody div.scroll-outer
+{
+    overflow: auto;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 16px;
+}
+
+/******* HIGHLIGHTING *******/
+
+table.biggus tbody tr.highlight-delta
+{
+    background-color: #ffff83 !important;
+    transition: background-color 0ms linear;
+}
+
+/******* COLUMN TYPES *******/
+
+table.biggus tbody div.bar
+{
+    background: red;
+    height: 1em;
+}

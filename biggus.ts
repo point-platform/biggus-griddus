@@ -1431,6 +1431,7 @@ export class Grid<TRow>
         this.thead = document.createElement('thead');
         this.tbody = document.createElement('tbody');
 
+        this.table.classList.add('biggus');
         this.table.appendChild(this.thead);
         this.table.appendChild(this.tbody);
 
