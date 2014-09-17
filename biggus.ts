@@ -1641,6 +1641,17 @@ export class Grid<TRow>
 
         this.scrollOuter.style.height = availableHeight + 'px';
 
+        var showScrollbar = this.windowSource.getWindowOffset() !== 0
+            || this.windowSource.getWindowSize() < this.windowSource.getUnderlyingItemCount();
+
+        if (showScrollbar) {
+            this.scrollColumnHeader.style.width = '';
+            this.scrollOuter.style.display = 'block';
+        } else {
+            this.scrollColumnHeader.style.width = '0px';
+            this.scrollOuter.style.display = 'none';
+        }
+
         var bodyRowCount = this.tbody.childElementCount - Grid.ScrollRowCount;
         if (bodyHeight > availableHeight)
         {
