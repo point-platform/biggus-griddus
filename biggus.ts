@@ -813,6 +813,11 @@ export class FilterView<T> implements IDataSource<T>
                 this.changed.raise(event);
                 break;
             }
+            case CollectionChangeType.Scroll:
+            {
+                this.changed.raise(event);
+                break;
+            }
         }
     }
 
@@ -1054,6 +1059,11 @@ export class SortView<T> implements IDataSource<T>
                 this.reset();
                 break;
             }
+            case CollectionChangeType.Scroll:
+            {
+                this.changed.raise(event);
+                break;
+            }
         }
     }
 
@@ -1215,6 +1225,11 @@ export class WindowView<T> implements IDataSource<T>
                 break;
             }
             case CollectionChangeType.Reset:
+            {
+                this.changed.raise(event);
+                break;
+            }
+            case CollectionChangeType.Scroll:
             {
                 this.changed.raise(event);
                 break;
