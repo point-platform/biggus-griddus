@@ -1642,14 +1642,19 @@ export class Grid<TRow>
     {
         // TODO this function reads/writes a lot of DOM measurements, which slows down some usage patterns (clientHeight, scrollTop, ...)
 
-        var bodyHeight = this.tbody.clientHeight,
-            headHeight = this.thead.clientHeight,
-            availableHeight = (this.table.parentElement.clientHeight - headHeight);
-
         // Calculate the target number of rows
         var rowCount = this.windowSource.getAllItems().length;
 
         this.scrollCell.rowSpan = rowCount + Grid.ScrollRowCount;
+
+        // The rest of this function requires the table to have a parent in order to know the
+        // available space for layout. If no parent exists yet, return now.
+        if (!this.table.parentElement)
+            return;
+
+        var bodyHeight = this.tbody.clientHeight,
+            headHeight = this.thead.clientHeight,
+            availableHeight = (this.table.parentElement.clientHeight - headHeight);
 
         var heightScale = this.windowSource.getUnderlyingItemCount() / rowCount;
         var height = bodyHeight * heightScale;
