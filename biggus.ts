@@ -1627,6 +1627,8 @@ export class Grid<TRow>
 
     private updateScrollbar()
     {
+        // TODO this function reads/writes a lot of DOM measurements, which slows down some usage patterns (clientHeight, scrollTop, ...)
+
         var bodyHeight = this.tbody.clientHeight,
             headHeight = this.thead.clientHeight,
             availableHeight = (this.table.parentElement.clientHeight - headHeight);
