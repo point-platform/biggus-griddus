@@ -662,6 +662,20 @@ export class DataSource<T> implements IDataSource<T>
         this.changed.raise(CollectionChange.insert(item, itemId, this.items.length - 1, true));
     }
 
+    public addRange(items: T[])
+    {
+        for (var i = 0; i < items.length; i++)
+        {
+            var item = items[i];
+            this.subscribeItemUpdates(item);
+            this.items.push(item);
+        }
+
+        // TODO should we always reset? what if only one item is added? what's a good heuristic here?
+        this.changed.raise(CollectionChange.reset<T>());
+        this.changed.raise(CollectionChange.scroll<T>());
+    }
+
     private subscribeItemUpdates(item: T)
     {
         var itemId = this.getItemId(item);
@@ -673,13 +687,6 @@ export class DataSource<T> implements IDataSource<T>
                 this.changed.raise(CollectionChange.update(changedItem, itemId, index));
             });
         }
-    }
-
-    public addRange(items: T[])
-    {
-        // TODO potentially better to add everything, then raise 'reset' here
-        for (var i = 0; i < items.length; i++)
-            this.add(items[i]);
     }
 
     public removeAt(index: number)
