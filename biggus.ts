@@ -786,7 +786,6 @@ export class FilterView<T> implements IDataSource<T>
             case CollectionChangeType.Move:
             {
                 console.error("Move not supported");
-                debugger;
                 break;
             }
             case CollectionChangeType.Reset:
@@ -1047,7 +1046,6 @@ export class SortView<T> implements IDataSource<T>
             case CollectionChangeType.Move:
             {
                 console.error("Move not supported");
-                debugger;
                 break;
             }
             case CollectionChangeType.Reset:
