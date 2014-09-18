@@ -19,6 +19,8 @@ table.biggus thead tr.header th
     color: #fff;
     text-align: left;
     padding: 1em 0.5em 0;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 table.biggus thead tr.header th.scroll
