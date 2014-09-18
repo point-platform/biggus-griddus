@@ -656,6 +656,14 @@ export class DataSource<T> implements IDataSource<T>
 
     public add(item: T)
     {
+        this.subscribeItemUpdates(item);
+        var itemId = this.getItemId(item);
+        this.items.push(item);
+        this.changed.raise(CollectionChange.insert(item, itemId, this.items.length - 1, true));
+    }
+
+    private subscribeItemUpdates(item: T)
+    {
         var itemId = this.getItemId(item);
         var notifyItem: INotifyChange<T> = <any>item;
         if (notifyItem.subscribeChange && typeof(notifyItem.subscribeChange) === 'function') {
@@ -665,8 +673,6 @@ export class DataSource<T> implements IDataSource<T>
                 this.changed.raise(CollectionChange.update(changedItem, itemId, index));
             });
         }
-        this.items.push(item);
-        this.changed.raise(CollectionChange.insert(item, itemId, this.items.length - 1, true));
     }
 
     public addRange(items: T[])
