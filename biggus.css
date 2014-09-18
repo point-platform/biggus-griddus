@@ -79,10 +79,10 @@ table.biggus tbody tr
     transition: background-color 600ms linear;
 }
 
-table.biggus th.numeric,
+table.biggus thead tr.header th.numeric,
 table.biggus td.numeric { text-align: right; }
 
-table.biggus th.centered,
+table.biggus thead tr.header th.centered,
 table.biggus td.centered { text-align: center; }
 
 
