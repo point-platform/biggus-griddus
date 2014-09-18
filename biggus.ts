@@ -1840,7 +1840,7 @@ export class Grid<TRow>
             this.flashRow(tr);
     }
 
-    private insertRowAt(index, tr)
+    private insertRowAt(index: number, tr: HTMLTableRowElement)
     {
         // We need to take the scrollbar row into account here
         if (index === this.tbody.childElementCount - Grid.ScrollRowCount)
