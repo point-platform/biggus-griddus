@@ -73,6 +73,8 @@ table.biggus tbody td.action.button button
     margin: 0;
 }
 
+table.biggus tbody a.action { color: blue; }
+
 table.biggus tbody tr
 {
     background-color: transparent;
