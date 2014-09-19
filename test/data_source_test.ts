@@ -34,18 +34,25 @@ describe("data source", () =>
             });
 
             expect(source.getAllItems()).toEqual(["A", "B"]);
+        });
+    });
+
+    describe("on add range", () =>
+    {
+        it("adds items and raises change event", () =>
+        {
+            source.add("A");
 
             source.changed.collect(events =>
             {
                 source.addRange(["1", "2", "3"]);
                 expect(events).toEqual([
-                    biggus.CollectionChange.insert("1", "1", 2, true),
-                    biggus.CollectionChange.insert("2", "2", 3, true),
-                    biggus.CollectionChange.insert("3", "3", 4, true)
+                    biggus.CollectionChange.reset<string>(),
+                    biggus.CollectionChange.scroll<string>()
                 ]);
             });
 
-            expect(source.getAllItems()).toEqual(["A", "B", "1", "2", "3"]);
+            expect(source.getAllItems()).toEqual(["A", "1", "2", "3"]);
         });
     });
 
