@@ -837,20 +837,33 @@ export class FilterView<T> implements IDataSource<T>
     public setPredicate(predicate: (item: T)=>boolean)
     {
         this.predicate = predicate;
-        var items = this.source.getAllItems();
+
+        var items = this.source.getAllItems(),
+            filteredItems: T[] = [],
+            hasChange = false;
+
         for (var i = 0; i < items.length; i++)
         {
-            var item = items[i];
-            var passesFilter = !predicate || predicate(item);
-            var itemId = this.source.getItemId(item);
-            var priorState = this.itemFilterState[itemId];
-            if (priorState === passesFilter)
-                continue;
-            this.itemFilterState[itemId] = passesFilter;
+            var item = items[i],
+                itemId = this.source.getItemId(item),
+                passesFilter = !predicate || predicate(item),
+                priorState = this.itemFilterState[itemId];
+
+            if (priorState !== passesFilter)
+            {
+                this.itemFilterState[itemId] = passesFilter;
+                hasChange = true;
+            }
+
             if (passesFilter)
-                this.append(item, itemId, false);
-            else
-                this.remove(item, itemId)
+                filteredItems.push(item);
+        }
+
+        if (hasChange)
+        {
+            this.items = filteredItems;
+            this.changed.raise(CollectionChange.reset<T>());
+            this.changed.raise(CollectionChange.scroll<T>());
         }
     }
 
