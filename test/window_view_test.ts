@@ -33,15 +33,20 @@ describe("window view", () =>
 
             windowView.changed.collect(events =>
             {
-                source.addRange(sourceItems);
+                source.add("A");
+                source.add("B");
+                source.add("C");
+                source.add("D");
+                source.add("E");
+                source.add("F");
 
                 expect(events.length).toEqual(9);
 
-                expect(events[0]).toEqual(biggus.CollectionChange.insert(sourceItems[0], sourceItems[0], 0, true));
+                expect(events[0]).toEqual(biggus.CollectionChange.insert("A", "A", 0, true));
                 expect(events[1]).toEqual(biggus.CollectionChange.scroll<string>());
-                expect(events[2]).toEqual(biggus.CollectionChange.insert(sourceItems[1], sourceItems[1], 1, true));
+                expect(events[2]).toEqual(biggus.CollectionChange.insert("B", "B", 1, true));
                 expect(events[3]).toEqual(biggus.CollectionChange.scroll<string>());
-                expect(events[4]).toEqual(biggus.CollectionChange.insert(sourceItems[2], sourceItems[2], 2, true));
+                expect(events[4]).toEqual(biggus.CollectionChange.insert("C", "C", 2, true));
                 expect(events[5]).toEqual(biggus.CollectionChange.scroll<string>());
                 expect(events[6]).toEqual(biggus.CollectionChange.scroll<string>());
                 expect(events[7]).toEqual(biggus.CollectionChange.scroll<string>());
