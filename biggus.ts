@@ -644,6 +644,7 @@ export class DataSource<T> implements IDataSource<T>
     public changed: Event<CollectionChange<T>> = new Event<CollectionChange<T>>();
 
     private items: T[] = [];
+    private itemById: {[id: string]: T} = {};
 
     constructor(itemIdAccessor: (item: T)=>string, items?: T[])
     {
@@ -654,12 +655,21 @@ export class DataSource<T> implements IDataSource<T>
         }
     }
 
+    // TODO rename to merge/mergeAll ?
+
     public add(item: T)
     {
-        this.subscribeItemUpdates(item);
         var itemId = this.getItemId(item);
+
+        if (!!this.itemById[itemId])
+            throw new Error("Attempting to add item with ID '" + itemId + "', but that ID already exists.");
+
+        this.subscribeItemUpdates(item);
+
+        // Append new item
         this.items.push(item);
         this.changed.raise(CollectionChange.insert(item, itemId, this.items.length - 1, true));
+        this.itemById[itemId] = item;
     }
 
     public addRange(items: T[])
@@ -667,8 +677,16 @@ export class DataSource<T> implements IDataSource<T>
         for (var i = 0; i < items.length; i++)
         {
             var item = items[i];
+            var itemId = this.getItemId(item);
+
+            if (!!this.itemById[itemId])
+                throw new Error("Attempting to add item with ID '" + itemId + "', but that ID already exists.");
+
             this.subscribeItemUpdates(item);
+
+            // Append new item
             this.items.push(item);
+            this.itemById[itemId] = item;
         }
 
         // TODO should we always reset? what if only one item is added? what's a good heuristic here?
@@ -692,6 +710,8 @@ export class DataSource<T> implements IDataSource<T>
     public removeAt(index: number)
     {
         var removed = this.items.splice(index, 1)[0];
+        var itemId = this.getItemId(removed);
+        delete this.itemById[itemId];
         this.changed.raise(CollectionChange.remove(removed, this.getItemId(removed), index));
     }
 
@@ -727,6 +747,7 @@ export class DataSource<T> implements IDataSource<T>
     public clear()
     {
         this.items = [];
+        this.itemById = {};
         this.reset();
     }
 }
