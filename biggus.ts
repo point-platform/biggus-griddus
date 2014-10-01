@@ -55,6 +55,7 @@ export interface IColumn<TRow>
     /** Fires when <code>filterPredicate</code> changes, and when <code>isFiltering</code> changes. */
     filterChanged: Event<IColumn<TRow>>;
     filterPredicate: (item: TRow)=>boolean;
+
     getDefaultSortDirection(): SortDirection;
 }
 
@@ -1619,6 +1620,9 @@ export class Grid<TRow>
 
         this.table.addEventListener('mousewheel', e =>
         {
+            if (e.altKey || e.ctrlKey || e.shiftKey)
+                return;
+
             e.preventDefault();
             e.stopImmediatePropagation();
             e.stopPropagation();
