@@ -734,6 +734,11 @@ export class DataSource<T> implements IDataSource<T>
         return this.items;
     }
 
+    public getById(id: string): T
+    {
+        return this.itemById[id];
+    }
+
     public getItemId(item: T): string
     {
         throw new Error("Should be rebound in constructor.");
