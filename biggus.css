@@ -52,8 +52,8 @@ table.biggus thead tr.filter td input
     box-sizing: border-box;
 }
 
-table.biggus thead th.sort-ascending::after  { content: "\25b2"; font-size: 15px; margin-left: 5px; color: #bbb; }
-table.biggus thead th.sort-descending::after { content: "\25bc"; font-size: 15px; margin-left: 5px; color: #bbb; }
+table.biggus thead th.sort-ascending::after  { content: "\25bc"; font-size: 15px; margin-left: 5px; color: #bbb; }
+table.biggus thead th.sort-descending::after { content: "\25b2"; font-size: 15px; margin-left: 5px; color: #bbb; }
 
 table.biggus tbody td
 {
