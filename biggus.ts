@@ -655,8 +655,6 @@ export class DataSource<T> implements IDataSource<T>
         }
     }
 
-    // TODO rename to merge/mergeAll ?
-
     public add(item: T)
     {
         var itemId = this.getItemId(item);
