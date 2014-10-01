@@ -55,6 +55,7 @@ export interface IColumn<TRow>
     /** Fires when <code>filterPredicate</code> changes, and when <code>isFiltering</code> changes. */
     filterChanged: Event<IColumn<TRow>>;
     filterPredicate: (item: TRow)=>boolean;
+    getDefaultSortDirection(): SortDirection;
 }
 
 export interface IColumnOptions<TRow>
@@ -67,6 +68,8 @@ export interface IColumnOptions<TRow>
     thStyle?: (th: HTMLTableHeaderCellElement)=>void;
     /** A function that styles the data cells (td) of the column. */
     tdStyle?: (td: HTMLTableCellElement, row: TRow)=>void;
+    /** Whether the column should sort ascending or descending by default. Optional. */
+    defaultSortDirection?: SortDirection;
 }
 
 export interface ITextColumnOptions<TRow> extends IColumnOptions<TRow>
@@ -117,6 +120,14 @@ export class ColumnBase<TRow> implements IColumn<TRow>
     }
 
     public getSortValue(row: TRow): any { return 0; }
+
+    public getDefaultSortDirection()
+    {
+        if (this.optionsBase.defaultSortDirection)
+            return this.optionsBase.defaultSortDirection;
+        else
+            return SortDirection.Descending;
+    }
 }
 
 export class TextColumn<TRow> extends ColumnBase<TRow>
@@ -191,6 +202,14 @@ export class TextColumn<TRow> extends ColumnBase<TRow>
             this.filterPredicate = null;
         }
         this.filterChanged.raise(this);
+    }
+
+    public getDefaultSortDirection()
+    {
+        if (this.options.defaultSortDirection)
+            return this.options.defaultSortDirection;
+        else
+            return SortDirection.Ascending;
     }
 }
 
@@ -274,6 +293,14 @@ export class NumericColumn<TRow> extends TextColumn<TRow>
             return '';
 
         return formatNumber(value, this.numericOptions.precision);
+    }
+
+    public getDefaultSortDirection()
+    {
+        if (this.numericOptions.defaultSortDirection)
+            return this.numericOptions.defaultSortDirection;
+        else
+            return SortDirection.Descending;
     }
 }
 
@@ -1029,7 +1056,8 @@ export class SortView<T> implements IDataSource<T>
         // Toggle direction on multiple clicks
         if (this.sortColumn === column)
             this.sortDirection = this.sortDirection === SortDirection.Ascending ? SortDirection.Descending : SortDirection.Ascending;
-
+        else
+            this.sortDirection = column.getDefaultSortDirection();
         this.sortColumn = column;
 
         this.reset();
