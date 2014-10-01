@@ -410,6 +410,8 @@ export class ActionColumn<TRow> extends ColumnBase<TRow>
     {
         th.classList.add('action');
         th.classList.add(this.options.type === ActionPresentationType.Button ? 'button' : 'link');
+        if (this.options.className)
+            th.classList.add(this.options.className);
     }
 }
 
