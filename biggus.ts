@@ -354,6 +354,36 @@ export class ImageColumn<TRow> extends ColumnBase<TRow>
     }
 }
 
+export interface ISpriteImageColumn<TRow> extends IColumnOptions<TRow>
+{
+    value: (row:TRow) => string;
+    spriteClassPrefix: string;
+}
+
+export class SpriteImageColumn<TRow> extends ColumnBase<TRow>
+{
+    constructor(private options: ISpriteImageColumn<TRow>)
+    {
+        super(options);
+    }
+
+    public styleCell(td: HTMLTableCellElement, row: TRow)
+    {
+        var d = document.createElement('div');
+        var val = this.options.value(row);
+        if (val)
+        {
+            d.className = this.options.spriteClassPrefix;
+            d.classList.add(val);
+        }
+        td.appendChild(d);
+
+        super.styleCell(td, row);
+    }
+
+    public getSortValue(row: TRow): any { return this.options.value(row); }
+}
+
 export interface IBarChartColumnOptions<TRow> extends IColumnOptions<TRow>
 {
     ratio: (row: TRow)=>number;
