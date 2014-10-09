@@ -1393,6 +1393,9 @@ export class WindowView<T> implements IDataSource<T>
 
     public setWindowOffset(offset: number)
     {
+        // Truncate to integer
+        offset |= 0;
+
         if (this.offset === offset)
             return;
         if (offset < 0)
