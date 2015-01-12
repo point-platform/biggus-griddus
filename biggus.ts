@@ -979,14 +979,13 @@ export class FilterView<T> implements IDataSource<T>
 
 /// compare: 0 (equal), -1 (a < b), 1 (a > b)
 
-export function findInsertionIndex<T>(items: T[], target: T, sortDirection: SortDirection, comparator: (a:T, b:T)=>number)
+export function findInsertionIndex<T>(items: T[], target: T, comparator: (a:T, b:T)=>number)
 {
     if (items.length === 0)
         return 0;
 
     var minIndex = 0,
-        maxIndex = items.length - 1,
-        sortDir = sortDirection === SortDirection.Ascending ? 1 : -1;;
+        maxIndex = items.length - 1;
 
     while (minIndex < maxIndex)
     {
@@ -1000,8 +999,8 @@ export function findInsertionIndex<T>(items: T[], target: T, sortDirection: Sort
             if (index === items.length - 1)
                 return items.length - 1;
 
-            var orderedBelow = comparator(items[index - 1], target) * sortDir < 0,
-                orderedAbove = comparator(target, items[index + 1]) * sortDir < 0;
+            var orderedBelow = comparator(items[index - 1], target) < 0,
+                orderedAbove = comparator(target, items[index + 1]) < 0;
 
             if (orderedBelow === orderedAbove)
             {
@@ -1017,7 +1016,7 @@ export function findInsertionIndex<T>(items: T[], target: T, sortDirection: Sort
             continue;
         }
 
-        var comp = comparator(target, item) * sortDir;
+        var comp = comparator(target, item);
 
         if (comp === 0)
             return index;
@@ -1028,13 +1027,21 @@ export function findInsertionIndex<T>(items: T[], target: T, sortDirection: Sort
             maxIndex = index;
     }
 
-    if (minIndex === items.length - 1 && comparator(items[items.length - 1], target) * sortDir < 0)
+    if (minIndex === items.length - 1 && comparator(items[items.length - 1], target) < 0)
         return items.length;
 
     return minIndex;
 }
 
-var compare = (a, b) => a === b ? 0 : a < b ? -1 : 1;
+var compare = (a: any, b: any, sortDir: SortDirection) => a === b
+    ? 0
+    : a === undefined
+        ? 1
+        : b === undefined
+            ? -1
+            : a < b
+                ? sortDir === SortDirection.Ascending ? -1 : 1
+                : sortDir === SortDirection.Ascending ? 1 : -1;
 
 export class SortView<T> implements IDataSource<T>
 {
@@ -1098,13 +1105,11 @@ export class SortView<T> implements IDataSource<T>
     {
         if (this.sortColumn)
         {
-            var dir = this.sortDirection === SortDirection.Ascending ? 1 : -1;
-
             this.items.sort((a, b) =>
             {
                 var v1 = this.sortColumn.getSortValue(a);
                 var v2 = this.sortColumn.getSortValue(b);
-                return dir * (v1 < v2 ? -1 : v1 === v2 ? 0 : 1);
+                return compare(v1, v2, this.sortDirection);
             });
         }
 
@@ -1118,7 +1123,7 @@ export class SortView<T> implements IDataSource<T>
             case CollectionChangeType.Insert:
             {
                 var insertIndex = this.sortColumn
-                    ? findInsertionIndex(this.items, event.item, this.sortDirection, (a, b) => compare(this.sortColumn.getSortValue(a), this.sortColumn.getSortValue(b)))
+                    ? findInsertionIndex(this.items, event.item, (a, b) => compare(this.sortColumn.getSortValue(a), this.sortColumn.getSortValue(b), this.sortDirection))
                     : this.items.length;
                 this.items.splice(insertIndex, 0, event.item);
                 this.changed.raise(CollectionChange.insert<T>(event.item, event.itemId, insertIndex, event.isNewlyAdded));
@@ -1136,7 +1141,7 @@ export class SortView<T> implements IDataSource<T>
                 var oldIndex = this.items.indexOf(event.item);
                 console.assert(oldIndex !== -1, "Updated item should be in items array");
                 var newIndex = this.sortColumn
-                    ? findInsertionIndex(this.items, event.item, this.sortDirection, (a, b) => compare(this.sortColumn.getSortValue(a), this.sortColumn.getSortValue(b)))
+                    ? findInsertionIndex(this.items, event.item, (a, b) => compare(this.sortColumn.getSortValue(a), this.sortColumn.getSortValue(b), this.sortDirection))
                     : oldIndex;
 
                 console.assert(newIndex >= 0);
