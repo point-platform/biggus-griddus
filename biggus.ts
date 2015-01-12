@@ -1054,7 +1054,7 @@ export class SortView<T> implements IDataSource<T>
     constructor(private source: IDataSource<T>)
     {
         this.getItemId = source.getItemId;
-        this.items = source.getAllItems().slice(); // slice in this form clones the array
+        this.items = source.getAllItems().slice(0); // slice in this form clones the array
 
         source.changed.subscribe(this.onSourceChanged.bind(this));
 
