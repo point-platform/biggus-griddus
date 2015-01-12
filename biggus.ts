@@ -1656,7 +1656,7 @@ export class Grid<TRow>
         scrollRow.appendChild(this.scrollCell);
         this.tbody.appendChild(scrollRow);
 
-        this.table.addEventListener('mousewheel', e =>
+        this.table.addEventListener('mousewheel', (e: MouseWheelEvent) =>
         {
             if (e.altKey || e.ctrlKey || e.shiftKey)
                 return;
@@ -1687,7 +1687,7 @@ export class Grid<TRow>
 
         // Set the tab index so that we receive key events on the table element
         this.table.tabIndex = 1;
-        this.table.addEventListener('keydown', e =>
+        this.table.addEventListener('keydown', (e: KeyboardEvent) =>
         {
             // Don't process keyboard input intended for an input element
             if (e.target instanceof HTMLInputElement)
