@@ -250,6 +250,8 @@ export interface INumericColumnOptions<TRow> extends IColumnOptions<TRow>
     hideZero?: boolean;
     /** Whether to hide NaN valued cells. Default to false. */
     hideNaN?: boolean;
+    /** Whether to sort on absolute numeric values. Defaults to false. */
+    sortAbsolute?: boolean;
 }
 
 export class NumericColumn<TRow> extends TextColumn<TRow>
@@ -295,6 +297,16 @@ export class NumericColumn<TRow> extends TextColumn<TRow>
             return '';
 
         return formatNumber(value, this.numericOptions.precision);
+    }
+
+    public getSortValue(row: TRow): any
+    {
+        var value = super.getSortValue(row);
+        if (isNaN(value) || value == null)
+            return undefined;
+        return this.numericOptions.sortAbsolute
+            ? Math.abs(value)
+            : value;
     }
 
     public getDefaultSortDirection()
