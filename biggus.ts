@@ -159,7 +159,8 @@ export class TextColumn<TRow> extends ColumnBase<TRow>
         else
         {
             console.assert(!!this.options.value);
-            return this.options.value(row).toString();
+            var value = this.options.value(row);
+            return value ? value.toString() : '';
         }
     }
 
