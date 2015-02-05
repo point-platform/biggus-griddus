@@ -2047,7 +2047,7 @@ export class Grid<TRow>
         // Flash the row that changed
         // TODO only queue this timer if the row is visible (once we model this)
         tr.classList.add('highlight-delta');
-        setTimeout(function ()
+        setTimeout(() =>
         {
             tr.classList.remove('highlight-delta');
         }, 100);
