@@ -150,17 +150,24 @@ export class TextColumn<TRow> extends ColumnBase<TRow>
 
     public getText(row: TRow): string
     {
-        if (this.pathParts)
+        try
         {
-            var value = dereferencePath(row, this.pathParts);
-            if (value != null)
-                return value.toString();
+            if (this.pathParts)
+            {
+                var value = dereferencePath(row, this.pathParts);
+                if (value != null)
+                    return value.toString();
+            }
+            else
+            {
+                console.assert(!!this.options.value);
+                var value = this.options.value(row);
+                return value ? value.toString() : '';
+            }
         }
-        else
+        catch (err)
         {
-            console.assert(!!this.options.value);
-            var value = this.options.value(row);
-            return value ? value.toString() : '';
+            return 'ERROR';
         }
     }
 
@@ -176,9 +183,16 @@ export class TextColumn<TRow> extends ColumnBase<TRow>
 
     public getSortValue(row: TRow): any
     {
-        return this.pathParts
-            ? dereferencePath(row, this.pathParts)
-            : this.options.value(row);
+        try
+        {
+            return this.pathParts
+                ? dereferencePath(row, this.pathParts)
+                : this.options.value(row);
+        }
+        catch (err)
+        {
+            return undefined;
+        }
     }
 
     public setFilterText(text: string)
@@ -281,9 +295,17 @@ export class NumericColumn<TRow> extends TextColumn<TRow>
 
     public getText(row: TRow): string
     {
-        var value = this.pathParts
-            ? dereferencePath(row, this.pathParts)
-            : this.numericOptions.value(row);
+        var value: any;
+        try
+        {
+            value = this.pathParts
+                ? dereferencePath(row, this.pathParts)
+                : this.numericOptions.value(row);
+        }
+        catch (err)
+        {
+            value = 'ERROR';
+        }
 
         if (value == null)
             return '';
@@ -301,7 +323,15 @@ export class NumericColumn<TRow> extends TextColumn<TRow>
 
     public getSortValue(row: TRow): any
     {
-        var value = super.getSortValue(row);
+        var value;
+        try
+        {
+            value = super.getSortValue(row);
+        }
+        catch (err)
+        {
+            return undefined;
+        }
         if (isNaN(value) || value == null)
             return undefined;
         return this.numericOptions.sortAbsolute
@@ -382,15 +412,19 @@ export class SpriteImageColumn<TRow> extends ColumnBase<TRow>
 
     public styleCell(td: HTMLTableCellElement, row: TRow)
     {
-        var d = document.createElement('div');
-        var val = this.options.value(row);
-        if (val)
+        try
         {
-            d.className = this.options.spriteClassPrefix;
-            d.classList.add(val);
+            var d = document.createElement('div');
+            var val = this.options.value(row);
+            if (val)
+            {
+                d.className = this.options.spriteClassPrefix;
+                d.classList.add(val);
+            }
+            td.appendChild(d);
         }
-        td.appendChild(d);
-
+        catch (err)
+        {}
         super.styleCell(td, row);
     }
 
@@ -412,13 +446,18 @@ export class BarChartColumn<TRow> extends ColumnBase<TRow>
 
     public styleCell(td: HTMLTableCellElement, row: TRow)
     {
-        var ratio = this.options.ratio(row);
+        try
+        {
+            var ratio = this.options.ratio(row);
 
-        var bar = document.createElement('div');
-        bar.className = 'bar';
-        bar.style.width = (100* ratio) + '%';
-        bar.style.backgroundColor = this.options.color(ratio);
-        td.appendChild(bar);
+            var bar = document.createElement('div');
+            bar.className = 'bar';
+            bar.style.width = (100* ratio) + '%';
+            bar.style.backgroundColor = this.options.color(ratio);
+            td.appendChild(bar);
+        }
+        catch (err)
+        {}
 
         super.styleCell(td, row);
     }
