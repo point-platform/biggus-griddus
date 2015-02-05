@@ -1604,6 +1604,8 @@ export class Grid<TRow>
     private scrollOuter: HTMLDivElement;
     private scrollInner: HTMLDivElement;
 
+    public enableRowHighlighting: boolean = true;
+
     private static ScrollRowCount = 1;
 
     constructor(source: IDataSource<TRow>, public table: HTMLTableElement, public options: IGridOptions<TRow>)
@@ -2044,6 +2046,9 @@ export class Grid<TRow>
 
     private flashRow(tr: HTMLTableRowElement)
     {
+        if (!this.enableRowHighlighting)
+            return;
+
         // Flash the row that changed
         // TODO only queue this timer if the row is visible (once we model this)
         tr.classList.add('highlight-delta');
